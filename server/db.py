@@ -13,7 +13,7 @@ class DB:
         self.lock = threading.RLock()
         if self.pg:
             import psycopg                                  # pip install "psycopg[binary]"
-            self.conn = psycopg.connect(self.url, autocommit=True, row_factory=psycopg.rows.dict_row)
+            self.conn = psycopg.connect(self.url, autocommit=True, row_factory=psycopg.rows.dict_row, prepare_threshold=None)
         else:
             path = self.url.replace("sqlite:///", "", 1)
             self.conn = sqlite3.connect(path, check_same_thread=False, isolation_level=None)
