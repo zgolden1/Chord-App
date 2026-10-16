@@ -22,6 +22,7 @@ def main():
     ap.add_argument("--search")
     ap.add_argument("--pick", type=int, default=0)
     ap.add_argument("--mbid")
+    ap.add_argument("--replace", action="store_true", help="make this the new official version even if the recording already has a chart")
     ap.add_argument("--candidate", action="store_true", help="store as a candidate (for comparison) instead of the official version")
     ap.add_argument("--pipeline", default=None)
     ap.add_argument("--youtube", default=None, help="YouTube link or id of the video that matches this recording")
@@ -57,7 +58,7 @@ def main():
         if not m:
             sys.exit("That does not look like a YouTube link.")
         data["video"] = {"id": m.group(1), "offset": a.offset}
-    r = requests.post(base + "/api/recordings/publish" + ("?as=candidate" if a.candidate else ""), json={"recording": rec, "data": data}, headers=H, timeout=60)
+    r = requests.post(base + "/api/recordings/publish" + ("?as=candidate" if a.candidate else ("?replace=1" if a.replace else "")), json={"recording": rec, "data": data}, headers=H, timeout=60)
     print(r.status_code, r.text)
 
 

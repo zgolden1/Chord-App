@@ -242,7 +242,8 @@ async def api_publish(request):
         return err("need recording and data.chords")
     ensure_recording(rec)
     mbid = rec["mbid"]
-    if request.query_params.get("as") == "candidate":
+    # An existing official chart is never replaced by accident: a second upload is stored as a candidate unless ?replace=1 is given.
+    if request.query_params.get("as") == "candidate" or (official(mbid) and request.query_params.get("replace") != "1"):
         d = get_db()
         v = (d.one("SELECT MAX(version) AS v FROM analyses WHERE mbid=?", (mbid,))["v"] or 0) + 1
         d.run("INSERT INTO analyses (mbid,version,status,source,data,created_at,created_by) VALUES (?,?,?,?,?,?,?)", (mbid, v, "candidate", "pipeline:" + data.get("pipeline", "?"), json.dumps(data), now(), who["id"]))

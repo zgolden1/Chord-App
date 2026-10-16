@@ -99,6 +99,10 @@ check("official untouched by candidate", requests.get(B + "/api/recordings/mb-1"
 check("nothing left to claim", requests.post(B + "/api/worker/claim", headers=W).json()["job"] is None)
 r = requests.put(B + "/api/recordings/nope/audio", data=b"x", headers=U)
 check("upload for unknown recording 404", r.status_code == 404)
+r = requests.post(B + "/api/recordings/publish", json={"recording": FAKE[0], "data": dict(DATA, pipeline="second")}, headers=M)
+check("second publish for a charted recording is stored as a candidate", r.status_code == 201 and r.json()["status"] == "candidate", r.text)
+r = requests.post(B + "/api/recordings/publish?replace=1", json={"recording": FAKE[0], "data": dict(DATA, pipeline="forced")}, headers=M)
+check("?replace=1 makes it the official version", r.status_code == 201 and r.json()["status"] == "official", r.text)
 # ---- video, search-first flow, requests
 r = requests.get(B + "/api/youtube", params={"q": "Honeymoon Avenue Ariana Grande"}).json()
 check("youtube lookup returns candidates", r["results"] and r["results"][0]["id"] == "dQw4w9WgXcQ", str(r))
