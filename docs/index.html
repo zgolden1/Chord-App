@@ -2166,7 +2166,7 @@ $("vidBack").onclick=()=>{try{au.pause()}catch(e){}ytStop();S=null;$("ctl").hidd
 
 /* ----- publish a chart analyzed on this device (moderators, or the admin key from Render) ----- */
 const PUB={pick:null,seq:0,timer:0};
-setInterval(()=>{const on=!!(CAT.api&&S&&S.pcm);if($("pubBox").hidden===on){$("pubBox").hidden=!on;if(on){PUB.pick=null;$("pubMsg").textContent="";$("pubRes").innerHTML="";$("pubQ").value=$("lyTitle").value?($("lyArtist").value+" "+$("lyTitle").value).trim():"";$("pubGo").disabled=true}}$("pubTok").hidden=!!catTok()},800);
+setInterval(()=>{const on=!!(CAT.api&&S&&S.pcm);if($("pubBox").hidden===on){$("pubBox").hidden=!on;if(on){PUB.pick=null;$("pubMsg").textContent="";$("pubRes").innerHTML="";$("pubQ").value=$("lyTitle").value?($("lyArtist").value+" "+$("lyTitle").value).trim():"";$("pubGo").disabled=false;if($("pubQ").value)$("pubQ").dispatchEvent(new Event("input"))}}$("pubTok").hidden=!!catTok()},800);
 $("pubQ").oninput=e=>{clearTimeout(PUB.timer);PUB.timer=setTimeout(async()=>{
  const q=e.target.value.trim(),my=++PUB.seq;if(q.length<2){$("pubRes").innerHTML="";return}
  try{const j=await catApi("/api/search?q="+encodeURIComponent(q));if(my!==PUB.seq)return;PUB.list=j.results||[];$("pubMsg").textContent=PUB.list.length?"":(j.note||"No matches. Try just the song title.");
@@ -2180,6 +2180,7 @@ function pubData(){
  const id=ytIdOf($("pubYt").value);if(id)d.video={id,offset:0};return d;
 }
 $("pubGo").onclick=async()=>{
+ if(!PUB.pick){$("pubMsg").textContent="First tap the matching recording in the list above. If no list shows, change the search text a little.";return}
  if(!PUB.pick||!S||!S.pcm)return;if($("pubYt").value.trim()&&!ytIdOf($("pubYt").value)){$("pubMsg").textContent="That doesn’t look like a YouTube link.";return}
  const tok=catTok()||$("pubTok").value.trim();if(!tok){$("pubMsg").textContent="Sign in as a moderator, or enter the admin key.";return}
  $("pubGo").disabled=true;$("pubMsg").textContent="Publishing…";
