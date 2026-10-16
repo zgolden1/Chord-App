@@ -1,0 +1,27 @@
+name: Android debug build
+on: workflow_dispatch
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - name: Build web assets
+        run: python3 web/build.py
+      - name: Create the Android project and add the microphone permission
+        working-directory: mobile
+        run: |
+          npm install
+          npx cap add android
+          npm run sync
+          sed -i 's#</manifest>#<uses-permission android:name="android.permission.RECORD_AUDIO" /><uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" /></manifest>#' android/app/src/main/AndroidManifest.xml
+      - name: Build debug APK
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chordflow-debug-apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk

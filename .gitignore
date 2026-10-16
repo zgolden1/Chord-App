@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.db
+.env
+node_modules/
+mobile/www/
+mobile/android/
+mobile/ios/
+uploads/
+*.wav
+*.mp3
+*.chordflow-notes.json

@@ -1,0 +1,11 @@
+{
+  "appId": "com.chordflow.app",
+  "appName": "ChordFlow",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "hostname": "app.chordflow.local"
+  },
+  "ios": { "contentInset": "always" }
+}
