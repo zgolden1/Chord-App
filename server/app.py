@@ -94,7 +94,19 @@ async def health_db(request):
         import re
         why = str(e).split("FATAL:")[-1].strip().splitlines()[0] if "FATAL:" in str(e) else str(e).splitlines()[0]
         why = re.sub(r'user "[^"]*"', 'user "…"', why)[:160]
-        return JSONResponse({"db": "down", "error": type(e).__name__, "why": why}, status_code=503)
+        import traceback
+        where = ["%s:%s:%s" % (os.path.basename(f.filename), f.name, f.lineno) for f in traceback.extract_tb(e.__traceback__)[-4:]]
+        u = os.environ.get("DATABASE_URL", "")
+        rest = u.split("://", 1)[-1]
+        host = rest.rsplit("@", 1)[-1].split("/")[0].split(":")[0]
+        user = rest.split(":", 1)[0] if "@" in rest else ""
+        checks = {                                                # yes/no facts about the address, never its contents
+            "set": bool(u), "starts_postgresql": u.startswith("postgresql://") or u.startswith("postgres://"),
+            "at_signs": u.count("@"), "has_brackets": "[" in u or "]" in u, "has_space_or_newline": any(c.isspace() for c in u),
+            "has_quotes": '"' in u or "'" in u, "user_starts_postgres_dot": user.startswith("postgres."),
+            "host_looks_ok": bool(host) and all(c.isalnum() or c in ".-" for c in host), "host_len": len(host),
+            "ends_with_postgres_db": u.rstrip().endswith("/postgres"), "port_5432": ":5432/" in u}
+        return JSONResponse({"db": "down", "error": type(e).__name__, "why": why, "where": where, "checks": checks}, status_code=503)
 
 
 class CatchErrors:
