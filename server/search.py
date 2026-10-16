@@ -65,13 +65,31 @@ def itunes(q, limit=10):
     return out
 
 
+def _norm(t):
+    import re
+    return re.sub(r"[^a-z0-9 ]+", " ", (t or "").lower()).split()
+
+
+def rank(q, res):
+    """Best match first: how many of the words you typed appear in the title or artist, with title words counting double."""
+    qs = set(_norm(q))
+    def score(r):
+        t, a = set(_norm(r["title"])), set(_norm(r["artist"]))
+        hit = sum(2 for w in qs if w in t) + sum(1 for w in qs if w in a and w not in t)
+        return (-hit, 0 if r.get("kind") == "studio" else 1)
+    return sorted(res, key=score)
+
+
 def find(q):
-    """MusicBrainz first (separates studio, live and remix recordings); if it refuses, the iTunes backup."""
+    """Apple's free song search first: it matches 'artist title' well and is reliable from a hosted server.
+    MusicBrainz (which separates studio, live and remix recordings) is the backup."""
     try:
-        return musicbrainz(q)
+        res = itunes(q, 20)
+        if res:
+            return rank(q, res)[:10]
     except Exception as e:
-        print("musicbrainz failed, using backup:", type(e).__name__, str(e)[:120], flush=True)
-        return itunes(q)
+        print("itunes failed, trying musicbrainz:", type(e).__name__, str(e)[:120], flush=True)
+    return rank(q, musicbrainz(q, 25))[:10]
 
 
 class NoKey(Exception):
