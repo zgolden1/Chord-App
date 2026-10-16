@@ -13,7 +13,13 @@ class DB:
         self.lock = threading.RLock()
         if self.pg:
             import psycopg                                  # pip install "psycopg[binary]"
-            self.conn = psycopg.connect(self.url, autocommit=True, row_factory=psycopg.rows.dict_row, prepare_threshold=None)
+            try:
+                self.conn = psycopg.connect(self.url, autocommit=True, row_factory=psycopg.rows.dict_row, prepare_threshold=None)
+            except Exception:
+                from urllib.parse import urlsplit             # say which login was tried, never the password
+                u = urlsplit(self.url)
+                print("DATABASE LOGIN FAILED: user=%r host=%r port=%s (the password is not shown)" % (u.username, u.hostname, u.port), flush=True)
+                raise
         else:
             path = self.url.replace("sqlite:///", "", 1)
             self.conn = sqlite3.connect(path, check_same_thread=False, isolation_level=None)

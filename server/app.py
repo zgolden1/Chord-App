@@ -28,7 +28,7 @@ db = None
 UPLOAD_DIR = os.environ.get("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "chordflow_uploads"))
 MAX_UPLOAD = int(float(os.environ.get("MAX_UPLOAD_MB", "60")) * 1024 * 1024)
 AUTO_APPROVE_MIN_AGREE = int(os.environ.get("AUTO_APPROVE_MIN_AGREE", "0"))     # 0 = moderators only
-SEARCH_FN = [search.musicbrainz]                                                 # replaced in tests
+SEARCH_FN = [search.find]                                                 # replaced in tests
 YT_FN = [search.youtube]                                                         # replaced in tests
 
 
@@ -93,13 +93,19 @@ async def api_search(request):
     try:
         res = SEARCH_FN[0](q)
     except Exception as e:
-        note = "Song lookup (MusicBrainz) failed: %s: %s" % (type(e).__name__, str(e)[:160])
+        note = "Song lookup failed: %s: %s" % (type(e).__name__, str(e)[:160])
         print("search error:", note, flush=True)
         res = []
-        local = get_db().all("SELECT * FROM recordings WHERE title LIKE ? OR artist LIKE ? LIMIT 10", ("%" + q + "%", "%" + q + "%"))
-        for r in local:
-            res.append({k: r[k] for k in ("mbid", "title", "artist", "album", "year", "length_s", "kind")})
-    d = get_db()
+        try:
+            for r in get_db().all("SELECT * FROM recordings WHERE title LIKE ? OR artist LIKE ? LIMIT 10", ("%" + q + "%", "%" + q + "%")):
+                res.append({k: r[k] for k in ("mbid", "title", "artist", "album", "year", "length_s", "kind")})
+        except Exception:
+            pass
+    try:
+        d = get_db()
+    except Exception as e:
+        print("database error:", type(e).__name__, flush=True)
+        return JSONResponse({"results": res, "note": "The song database isn’t reachable yet, so charts can’t be saved or found."})
     have = {r["mbid"]: r for r in d.all("SELECT mbid, version FROM analyses WHERE status='official'")}
     reqs = {r["mbid"]: r["n"] for r in d.all("SELECT mbid, COUNT(*) AS n FROM song_requests GROUP BY mbid")}
     for r in res:

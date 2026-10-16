@@ -48,6 +48,32 @@ def musicbrainz(q, limit=10):
     return parse(r.json())
 
 
+def itunes(q, limit=10):
+    """Backup song search (Apple's free iTunes Search API, no key). Used when MusicBrainz refuses the server.
+    Ids look like 'it:12345'; they work like MusicBrainz ids everywhere else in the catalog."""
+    r = requests.get("https://itunes.apple.com/search", params={"term": q, "media": "music", "entity": "song", "limit": limit}, timeout=8)
+    r.raise_for_status()
+    out = []
+    for t in r.json().get("results", []):
+        if not t.get("trackId"):
+            continue
+        date = t.get("releaseDate") or ""
+        out.append({"mbid": "it:%s" % t["trackId"], "title": t.get("trackName", ""), "artist": t.get("artistName", "Unknown"),
+                    "album": t.get("collectionName"), "year": int(date[:4]) if date[:4].isdigit() else None,
+                    "length_s": (t["trackTimeMillis"] / 1000.0) if t.get("trackTimeMillis") else None,
+                    "kind": kind_of(None, t.get("trackName")), "disambiguation": ""})
+    return out
+
+
+def find(q):
+    """MusicBrainz first (separates studio, live and remix recordings); if it refuses, the iTunes backup."""
+    try:
+        return musicbrainz(q)
+    except Exception as e:
+        print("musicbrainz failed, using backup:", type(e).__name__, str(e)[:120], flush=True)
+        return itunes(q)
+
+
 class NoKey(Exception):
     pass
 
