@@ -32,7 +32,7 @@ def identify(request):
     if not h.lower().startswith("bearer "):
         return None
     tok = h[7:].strip()
-    wt = os.environ.get("WORKER_TOKEN")
+    wt = (os.environ.get("WORKER_TOKEN") or "").strip()
     if wt and hmac.compare_digest(tok, wt):
         return {"id": "worker", "role": "worker"}
     if os.environ.get("DEV_AUTH") == "1" and tok.startswith("dev:"):
