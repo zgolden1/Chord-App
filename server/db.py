@@ -16,9 +16,10 @@ class DB:
             try:
                 self.conn = psycopg.connect(self.url, autocommit=True, row_factory=psycopg.rows.dict_row, prepare_threshold=None)
             except Exception:
-                from urllib.parse import urlsplit             # say which login was tried, never the password
-                u = urlsplit(self.url)
-                print("DATABASE LOGIN FAILED: user=%r host=%r port=%s (the password is not shown)" % (u.username, u.hostname, u.port), flush=True)
+                rest = self.url.split("://", 1)[-1]                  # plain string parsing: never fails on odd characters
+                user = rest.split(":", 1)[0] if "@" in rest else "?"
+                host = rest.rsplit("@", 1)[-1].split("/")[0]
+                print("DATABASE LOGIN FAILED: user=%r host=%r brackets_in_url=%s (the password is not shown)" % (user, host, "[" in self.url), flush=True)
                 raise
         else:
             path = self.url.replace("sqlite:///", "", 1)
