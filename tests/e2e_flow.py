@@ -44,7 +44,7 @@ async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path="/opt/pw-browsers/chromium")
         # 0. catalog not configured
-        pg, logs = await newpage(b, {})
+        pg, logs = await newpage(b, {"api": ""})
         check("no API: search is disabled with a clear message", await pg.is_disabled("#q") and "isn’t connected" in await pg.inner_text("#qmsg"))
         # 1-4. the flow
         pg, logs = await newpage(b, {"api": API, "devToken": "dev:alice"})
