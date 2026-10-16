@@ -85,6 +85,45 @@ async def health(request):
     return JSONResponse({"ok": True})
 
 
+async def health_db(request):
+    """Is the database reachable? Says only the reason (never the host or password), so it is safe to open in a browser."""
+    try:
+        get_db().one("SELECT 1 AS ok")
+        return JSONResponse({"db": "ok"})
+    except Exception as e:
+        import re
+        why = str(e).split("FATAL:")[-1].strip().splitlines()[0] if "FATAL:" in str(e) else str(e).splitlines()[0]
+        why = re.sub(r'user "[^"]*"', 'user "…"', why)[:160]
+        return JSONResponse({"db": "down", "error": type(e).__name__, "why": why}, status_code=503)
+
+
+class CatchErrors:
+    """Turns a crash into a readable JSON error that still carries the CORS headers, so the page can show it
+    instead of the browser's blank 'Load failed'."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        started = []
+
+        async def watch(msg):
+            if msg["type"] == "http.response.start":
+                started.append(1)
+            await send(msg)
+        try:
+            await self.app(scope, receive, watch)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            if started:
+                raise
+            kind = "database" if type(e).__module__.startswith("psycopg") else "server"
+            msg = "The song database isn’t reachable right now. Try again in a minute." if kind == "database" else "Something went wrong on the server."
+            await JSONResponse({"error": msg, "kind": kind}, status_code=503 if kind == "database" else 500)(scope, receive, send)
+
+
 async def api_search(request):
     q = request.query_params.get("q", "").strip()
     if len(q) < 2:
@@ -391,6 +430,7 @@ async def api_top_requests(request):
 def make_app():
     routes = [
         Route("/health", health),
+        Route("/health/db", health_db),
         Route("/api/search", api_search),
         Route("/api/youtube", api_youtube),
         Route("/api/recordings/{mbid}/request", api_request_song, methods=["POST"]),
@@ -409,7 +449,7 @@ def make_app():
         Route("/api/worker/jobs/{id:int}/result", worker_result, methods=["POST"]),
     ]
     origins = [o for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o]
-    return Starlette(routes=routes, middleware=[Middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])])
+    return Starlette(routes=routes, middleware=[Middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"]), Middleware(CatchErrors)])
 
 
 app = make_app()

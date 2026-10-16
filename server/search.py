@@ -62,6 +62,9 @@ def itunes(q, limit=10):
                     "album": t.get("collectionName"), "year": int(date[:4]) if date[:4].isdigit() else None,
                     "length_s": (t["trackTimeMillis"] / 1000.0) if t.get("trackTimeMillis") else None,
                     "kind": kind_of(None, t.get("trackName")), "disambiguation": ""})
+        low = ((t.get("trackName") or "") + " " + (t.get("collectionName") or "")).lower()
+        if out[-1]["kind"] == "studio" and ("originally performed" in low or "tribute" in low or "made famous" in low or "in the style of" in low):
+            out[-1]["kind"] = "cover"
     return out
 
 
@@ -76,7 +79,9 @@ def rank(q, res):
     def score(r):
         t, a = set(_norm(r["title"])), set(_norm(r["artist"]))
         hit = sum(2 for w in qs if w in t) + sum(1 for w in qs if w in a and w not in t)
-        return (-hit, 0 if r.get("kind") == "studio" else 1)
+        if r.get("kind") in ("karaoke", "cover", "instrumental"):
+            hit -= 3                                   # a karaoke or tribute copy never outranks the real recording
+        return (-hit, {"studio": 0, "live": 1, "acoustic": 1}.get(r.get("kind"), 2))
     return sorted(res, key=score)
 
 
