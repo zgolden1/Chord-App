@@ -5,8 +5,8 @@ import pathlib, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE.parent / "docs" / "index.html"
-MODULES = [("DSP", "dsp.js"), ("ENGRAVE", "engrave.js"), ("LYRICS", "lyrics.js"), ("VOICING", "voicing.js"), ("YT", "yt.js"), ("LISTEN", "listen.js")]
-HEAD = ('<title>ChordFlow</title>\n<link rel="manifest" href="manifest.webmanifest">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
+MODULES = [("DSP", "dsp.js"), ("ENGRAVE", "engrave.js"), ("LYRICS", "lyrics.js"), ("VOICING", "voicing.js"), ("YT", "yt.js"), ("LISTEN", "listen.js"), ("CATALOG", "catalog.js")]
+HEAD = ('<title>ChordFlow</title>\n<script src="config.js"></script>\n<link rel="manifest" href="manifest.webmanifest">\n<link rel="apple-touch-icon" href="apple-touch-icon.png">\n'
         '<meta name="theme-color" content="#1f2933">\n<meta name="mobile-web-app-capable" content="yes">\n<meta name="apple-mobile-web-app-capable" content="yes">\n'
         '<meta name="apple-mobile-web-app-title" content="ChordFlow">\n<meta name="apple-mobile-web-app-status-bar-style" content="default">')
 SW = '<script>if("serviceWorker"in navigator&&/^https?:/.test(location.protocol))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>\n</body>'

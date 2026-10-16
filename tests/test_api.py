@@ -9,7 +9,8 @@ import requests, uvicorn
 from server import app as A
 
 FAKE = [{"mbid": "mb-1", "title": "Honeymoon Avenue", "artist": "Ariana Grande", "album": "Yours Truly", "year": 2013, "length_s": 240.0, "kind": "studio"}]
-A.SEARCH_FN[0] = lambda q: [dict(r) for r in FAKE]
+A.SEARCH_FN[0] = lambda q: [dict(r) for r in FAKE] + [dict(mbid='mb-2', title='Unknown Song', artist='Nobody', album=None, year=2020, length_s=200.0, kind='studio')]
+A.YT_FN[0] = lambda q: [{'id': 'dQw4w9WgXcQ', 'title': q + ' (official video)', 'channel': 'Chan'}]
 srv = uvicorn.Server(uvicorn.Config(A.app, port=8765, log_level="error"))
 threading.Thread(target=srv.run, daemon=True).start()
 time.sleep(1.2)
@@ -98,5 +99,31 @@ check("official untouched by candidate", requests.get(B + "/api/recordings/mb-1"
 check("nothing left to claim", requests.post(B + "/api/worker/claim", headers=W).json()["job"] is None)
 r = requests.put(B + "/api/recordings/nope/audio", data=b"x", headers=U)
 check("upload for unknown recording 404", r.status_code == 404)
+# ---- video, search-first flow, requests
+r = requests.get(B + "/api/youtube", params={"q": "Honeymoon Avenue Ariana Grande"}).json()
+check("youtube lookup returns candidates", r["results"] and r["results"][0]["id"] == "dQw4w9WgXcQ", str(r))
+check("youtube lookup with short query is empty", requests.get(B + "/api/youtube", params={"q": "a"}).json()["results"] == [])
+vs = {"kind": "video", "payload": {"id": "dQw4w9WgXcQ", "offset": 0.4}}
+check("bad youtube id rejected", requests.post(B + "/api/recordings/mb-1/suggestions", json={"kind": "video", "payload": {"id": "short"}}, headers=U).status_code == 400)
+check("offset over 30 s rejected", requests.post(B + "/api/recordings/mb-1/suggestions", json={"kind": "video", "payload": {"id": "dQw4w9WgXcQ", "offset": 99}}, headers=U).status_code == 400)
+sid = requests.post(B + "/api/recordings/mb-1/suggestions", json=vs, headers=U).json()["id"]
+check("official has no video before approval", "video" not in requests.get(B + "/api/recordings/mb-1").json()["analysis"]["data"])
+requests.post(B + "/api/moderation/%d/approve" % sid, headers=M)
+v = requests.get(B + "/api/recordings/mb-1").json()["analysis"]["data"].get("video")
+check("approved video is part of the chart", v == {"id": "dQw4w9WgXcQ", "offset": 0.4}, str(v))
+res = requests.get(B + "/api/search", params={"q": "song"}).json()["results"]
+check("search lists charted and uncharted songs", {r["mbid"]: r["analyzed"] for r in res} == {"mb-1": True, "mb-2": False}, str(res))
+rq = {"recording": res[1]}
+check("request needs sign-in", requests.post(B + "/api/recordings/mb-2/request", json=rq).status_code == 401)
+check("request must match the path", requests.post(B + "/api/recordings/mb-9/request", json=rq, headers=U).status_code == 400)
+r = requests.post(B + "/api/recordings/mb-2/request", json=rq, headers=U)
+check("alice requests mb-2", r.status_code == 201 and r.json()["requests"] == 1, r.text)
+requests.post(B + "/api/recordings/mb-2/request", json=rq, headers=U)
+r = requests.post(B + "/api/recordings/mb-2/request", json=rq, headers={"Authorization": "Bearer dev:carol"})
+check("same person counts once, second person adds", r.json()["requests"] == 2, r.text)
+check("search shows request count", [x for x in requests.get(B + "/api/search", params={"q": "song"}).json()["results"] if x["mbid"] == "mb-2"][0]["requests"] == 2)
+check("user cannot read request list", requests.get(B + "/api/moderation/requests", headers=U).status_code == 403)
+top = requests.get(B + "/api/moderation/requests", headers=M).json()["requests"]
+check("moderator sees most requested uncharted song", len(top) == 1 and top[0]["mbid"] == "mb-2" and top[0]["n"] == 2, str(top))
 print("\n%d checks, %s" % (n[0], "FAILURES" if bad else "all passed"))
 sys.exit(1 if bad else 0)

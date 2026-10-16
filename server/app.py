@@ -29,6 +29,7 @@ UPLOAD_DIR = os.environ.get("UPLOAD_DIR", os.path.join(tempfile.gettempdir(), "c
 MAX_UPLOAD = int(float(os.environ.get("MAX_UPLOAD_MB", "60")) * 1024 * 1024)
 AUTO_APPROVE_MIN_AGREE = int(os.environ.get("AUTO_APPROVE_MIN_AGREE", "0"))     # 0 = moderators only
 SEARCH_FN = [search.musicbrainz]                                                 # replaced in tests
+YT_FN = [search.youtube]                                                         # replaced in tests
 
 
 def now():
@@ -97,7 +98,9 @@ async def api_search(request):
             res.append({k: r[k] for k in ("mbid", "title", "artist", "album", "year", "length_s", "kind")})
     d = get_db()
     have = {r["mbid"]: r for r in d.all("SELECT mbid, version FROM analyses WHERE status='official'")}
+    reqs = {r["mbid"]: r["n"] for r in d.all("SELECT mbid, COUNT(*) AS n FROM song_requests GROUP BY mbid")}
     for r in res:
+        r["requests"] = reqs.get(r["mbid"], 0)
         r["analyzed"] = r["mbid"] in have
         r["version"] = have[r["mbid"]]["version"] if r["mbid"] in have else None
     res.sort(key=lambda r: (not r["analyzed"],))
@@ -327,10 +330,61 @@ async def worker_result(request):
     return JSONResponse({"status": "done", "as": status})
 
 
+# ---------------------------------------------------------------- YouTube lookup and song requests
+async def api_youtube(request):
+    q = request.query_params.get("q", "").strip()
+    if len(q) < 3:
+        return JSONResponse({"results": []})
+    try:
+        return JSONResponse({"results": YT_FN[0](q)})
+    except search.NoKey:
+        return JSONResponse({"results": [], "error": "no_key"})
+    except Exception as e:
+        return JSONResponse({"results": [], "error": "unavailable"})
+
+
+async def api_request_song(request):
+    """Someone wants this song charted. Needs sign-in. The recording is saved from what the search showed."""
+    who, e = need(request, "user", "moderator")
+    if e:
+        return e
+    try:
+        body = await request.json()
+    except Exception:
+        return err("body must be JSON")
+    rec = body.get("recording") or {}
+    mbid = request.path_params["mbid"]
+    if rec.get("mbid") != mbid or not str(rec.get("title", ""))[:200] or len(mbid) > 64:
+        return err("send the recording from the search result")
+    d = get_db()
+    ensure_recording({"mbid": mbid, "title": str(rec["title"])[:200], "artist": str(rec.get("artist", ""))[:200], "album": (rec.get("album") or None) and str(rec["album"])[:200],
+                      "year": rec.get("year") if isinstance(rec.get("year"), int) else None, "length_s": rec.get("length_s") if isinstance(rec.get("length_s"), (int, float)) else None,
+                      "kind": str(rec.get("kind") or "")[:30] or None})
+    if not d.one("SELECT 1 AS x FROM song_requests WHERE mbid=? AND user_id=?", (mbid, who["id"])):
+        n = d.one("SELECT COUNT(*) AS n FROM song_requests WHERE user_id=? AND created_at>?", (who["id"], datetime.fromtimestamp(time.time() - 86400, timezone.utc).isoformat()))["n"]
+        if n >= 20:
+            return err("daily limit reached", 429)
+        d.run("INSERT INTO song_requests (mbid,user_id,created_at) VALUES (?,?,?)", (mbid, who["id"], now()))
+    return JSONResponse({"requests": d.one("SELECT COUNT(*) AS n FROM song_requests WHERE mbid=?", (mbid,))["n"]}, status_code=201)
+
+
+async def api_top_requests(request):
+    who, e = need(request, "moderator")
+    if e:
+        return e
+    rows = get_db().all("""SELECT r.mbid, r.title, r.artist, r.year, r.length_s, COUNT(*) AS n FROM song_requests q JOIN recordings r ON r.mbid=q.mbid
+                           WHERE NOT EXISTS (SELECT 1 FROM analyses a WHERE a.mbid=q.mbid AND a.status='official')
+                           GROUP BY r.mbid, r.title, r.artist, r.year, r.length_s ORDER BY n DESC, r.title LIMIT 100""")
+    return JSONResponse({"requests": rows})
+
+
 def make_app():
     routes = [
         Route("/health", health),
         Route("/api/search", api_search),
+        Route("/api/youtube", api_youtube),
+        Route("/api/recordings/{mbid}/request", api_request_song, methods=["POST"]),
+        Route("/api/moderation/requests", api_top_requests),
         Route("/api/recordings/{mbid}", api_recording),
         Route("/api/recordings/{mbid}/versions", api_versions),
         Route("/api/recordings/{mbid}/suggestions", api_suggest, methods=["GET", "POST"]),

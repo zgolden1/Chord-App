@@ -77,3 +77,11 @@ CREATE TABLE IF NOT EXISTS suggestion_votes (
   user_id       TEXT NOT NULL,
   PRIMARY KEY (suggestion_id, user_id)
 );
+
+-- "Please chart this song": one row per (recording, person). The count tells you what to analyze next.
+CREATE TABLE IF NOT EXISTS song_requests (
+  mbid          TEXT NOT NULL REFERENCES recordings(mbid),
+  user_id       TEXT NOT NULL,
+  created_at    TEXT NOT NULL,
+  PRIMARY KEY (mbid, user_id)
+);

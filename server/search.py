@@ -46,3 +46,27 @@ def musicbrainz(q, limit=10):
                      headers={"User-Agent": ua}, timeout=15)
     r.raise_for_status()
     return parse(r.json())
+
+
+class NoKey(Exception):
+    pass
+
+
+_yt_cache = {}
+
+
+def youtube(q, limit=5):
+    """Top embeddable music videos for a query, using the YouTube Data API v3 (free quota: about 100 searches a day).
+    Needs YOUTUBE_API_KEY in the server's environment. Results are cached for an hour."""
+    key = os.environ.get("YOUTUBE_API_KEY")
+    if not key:
+        raise NoKey()
+    hit = _yt_cache.get(q.lower())
+    if hit and time.time() - hit[0] < 3600:
+        return hit[1]
+    r = requests.get("https://www.googleapis.com/youtube/v3/search", params={
+        "part": "snippet", "q": q, "type": "video", "videoEmbeddable": "true", "videoCategoryId": "10", "maxResults": limit, "key": key}, timeout=15)
+    r.raise_for_status()
+    out = [{"id": i["id"]["videoId"], "title": i["snippet"]["title"], "channel": i["snippet"]["channelTitle"]} for i in r.json().get("items", []) if i.get("id", {}).get("videoId")]
+    _yt_cache[q.lower()] = (time.time(), out)
+    return out

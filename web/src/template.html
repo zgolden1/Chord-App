@@ -252,7 +252,16 @@ footer{background:var(--bg);border-top:1px solid var(--rule);box-shadow:0 -8px 2
 #lvHist,.lvp{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.lvc{font:600 16px var(--sans);padding:6px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--bg)}.lvc.now{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 #lvLoop{margin-top:18px;text-align:center;font:14px var(--sans)}#lvLoop b{display:block;margin-bottom:8px;color:var(--mute);font-weight:600}.lvr{margin-top:8px;color:var(--mute);letter-spacing:.5px}#lvMsg{margin-top:12px;font:14px/1.5 var(--sans);color:var(--mute)}
 body.stage #live{display:none}
-@media print{#sgBar,#toast,#ytWrap,#live{display:none!important}}
+#srch{margin:0 0 6px}#q{width:100%;min-height:54px;font:500 18px var(--sans);padding:0 18px;border:1.5px solid var(--rule);border-radius:16px;background:var(--bg);color:var(--ink)}#q:focus{outline:2px solid var(--amber);outline-offset:2px}
+#qmsg{font:14px/1.5 var(--sans);color:var(--mute);margin:8px 2px;min-height:4px}#qres,#vidList{display:flex;flex-direction:column;gap:8px}
+.res{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;width:100%;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--rule);font-family:var(--sans)}
+.res .rt{display:flex;flex-direction:column;min-width:0}.res b{font-weight:600;overflow:hidden;text-overflow:ellipsis}.res small{color:var(--mute);font-size:13px}
+.chip{flex:none;font:600 12px var(--sans);padding:4px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--mute);background:var(--bg)}.chip.ok{color:var(--ok);border-color:var(--ok)}
+#askBox,#vidPick{margin:14px 0;padding:16px;border:1px solid var(--rule);border-radius:16px;background:var(--card);font-family:var(--sans)}#askBox p,#vidPick p{margin:6px 0 12px;color:var(--mute);font-size:14px}
+#vidUrl{flex:1 1 220px;min-height:38px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)}
+#vidBar{display:flex;gap:4px;flex-wrap:wrap;margin:-8px 0 12px}#acct button,header #bStage{white-space:nowrap;padding:6px 10px;min-height:34px;font-size:13px}#acct{display:inline-flex}
+#more{margin:10px 0}body.stage #srch,body.stage #vidBar{display:none}
+@media print{#sgBar,#toast,#ytWrap,#live,#srch,#vidBar{display:none!important}}
 .erow{display:flex;gap:6px;align-items:center;margin-bottom:8px}.erow input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:8px 10px}
 .erow .tm{min-width:64px;font-variant-numeric:tabular-nums;font-size:13px;padding:8px 6px}.erow button{flex:none;padding:6px 8px}
 @media (max-width:560px){.erow{flex-wrap:wrap}.erow input{flex:1 1 100%;order:2}}
@@ -262,13 +271,17 @@ body.stage #live{display:none}
 </head>
 <body>
 <main>
-<header><h1>Chord<span>Flow</span></h1><button id="bStage" class="ghost">Stage view</button></header>
-<section id="load"><label class="file"><input type="file" id="fp" hidden><span>Choose a song file (MP3, WAV, M4A)</span></label><div class="lvbar"><button id="lvGo" class="primary big">Listen to a song</button><span class="hint">Uses the microphone. Nothing is uploaded.</span></div>
+<header><h1>Chord<span>Flow</span></h1><span id="acct"></span><button id="bStage" class="ghost">Stage view</button></header>
+<section id="load"><div id="srch"><input id="q" type="search" placeholder="Search a song or artist" autocomplete="off" aria-label="Search for a song"><div id="qmsg" role="status"></div><div id="qres"></div>
+<div id="askBox" hidden><b id="askTitle"></b><p id="askTxt"></p><button id="askBtn" class="primary">Ask for this chart</button></div>
+<div id="vidPick" hidden><b id="vidTitle"></b><p id="vidMsg"></p><div id="vidList"></div><div class="row" style="gap:8px;flex-wrap:wrap"><input id="vidUrl" type="text" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link"><button id="vidGo">Use this video</button></div></div></div><div class="lvbar"><button id="lvGo" class="primary big">Listen to a song</button><span class="hint">Uses the microphone. Nothing is uploaded.</span></div>
+<details class="dopt" id="more"><summary>Use your own audio file</summary><label class="file"><input type="file" id="fp" hidden><span>Choose a song file (MP3, WAV, M4A)</span></label></details>
 <div id="st">Analysis runs on your device. Nothing is uploaded. A 3-minute song takes about 10 seconds.</div><div id="pg"><i></i></div>
 <details class="dopt" id="ytBox"><summary>Or play along with a YouTube link</summary><div class="row" style="flex-wrap:wrap;gap:8px"><input id="ytUrl" type="text" inputmode="url" placeholder="YouTube link" aria-label="YouTube link" style="flex:1 1 240px;min-height:38px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)"><label class="ghostfile">Chart file<input type="file" id="ytChart" accept=".json,application/json"></label><button id="ytGo" class="primary">Start</button></div><div id="ytMsg" role="status"></div><p class="hint">The video plays in YouTube’s own player. ChordFlow never copies the audio. The chart file comes from the catalog, or from analyze.py run on your own copy of the song.</p></details></section>
 <section id="live" hidden><div class="lvtop"><span id="lvKey"></span><span id="lvTime"></span></div><div id="lvNow" aria-live="polite">–</div><div id="lvHist"></div><div id="lvLoop"></div>
 <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button id="lvStop" class="primary" hidden>Stop</button><select id="lvKeySel" aria-label="Key"></select><select id="lvTri" aria-label="Chord detail"><option value="t">Triads</option><option value="s">With 7ths</option></select></div>
 <div id="lvAfter" class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap" hidden><button id="lvChart" class="primary">Make a full chart</button><button id="lvDrop" class="ghost">Discard</button></div><div id="lvMsg" role="status"></div></section>
+<div id="vidBar" hidden><button id="vidBack" class="ghost">← Search</button><button id="vidChange" class="ghost">Wrong video?</button><button id="vidSave" class="ghost">Save this video and timing for everyone</button></div>
 <div id="ytWrap" hidden><iframe id="ytf" title="Video"></iframe></div>
 <section id="ctl" hidden>
 <h2 id="ttl"></h2><div id="mk"></div>
@@ -1092,6 +1105,9 @@ setInterval(()=>{
 </script>
 <script>
 /*LISTEN*/
+</script>
+<script>
+/*CATALOG*/
 </script>
 </body>
 </html>

@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ChordFlow</title>
+<script src="config.js"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#1f2933">
@@ -259,7 +260,16 @@ footer{background:var(--bg);border-top:1px solid var(--rule);box-shadow:0 -8px 2
 #lvHist,.lvp{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.lvc{font:600 16px var(--sans);padding:6px 12px;border:1px solid var(--rule);border-radius:10px;background:var(--bg)}.lvc.now{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 #lvLoop{margin-top:18px;text-align:center;font:14px var(--sans)}#lvLoop b{display:block;margin-bottom:8px;color:var(--mute);font-weight:600}.lvr{margin-top:8px;color:var(--mute);letter-spacing:.5px}#lvMsg{margin-top:12px;font:14px/1.5 var(--sans);color:var(--mute)}
 body.stage #live{display:none}
-@media print{#sgBar,#toast,#ytWrap,#live{display:none!important}}
+#srch{margin:0 0 6px}#q{width:100%;min-height:54px;font:500 18px var(--sans);padding:0 18px;border:1.5px solid var(--rule);border-radius:16px;background:var(--bg);color:var(--ink)}#q:focus{outline:2px solid var(--amber);outline-offset:2px}
+#qmsg{font:14px/1.5 var(--sans);color:var(--mute);margin:8px 2px;min-height:4px}#qres,#vidList{display:flex;flex-direction:column;gap:8px}
+.res{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;width:100%;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--rule);font-family:var(--sans)}
+.res .rt{display:flex;flex-direction:column;min-width:0}.res b{font-weight:600;overflow:hidden;text-overflow:ellipsis}.res small{color:var(--mute);font-size:13px}
+.chip{flex:none;font:600 12px var(--sans);padding:4px 10px;border-radius:99px;border:1px solid var(--rule);color:var(--mute);background:var(--bg)}.chip.ok{color:var(--ok);border-color:var(--ok)}
+#askBox,#vidPick{margin:14px 0;padding:16px;border:1px solid var(--rule);border-radius:16px;background:var(--card);font-family:var(--sans)}#askBox p,#vidPick p{margin:6px 0 12px;color:var(--mute);font-size:14px}
+#vidUrl{flex:1 1 220px;min-height:38px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)}
+#vidBar{display:flex;gap:4px;flex-wrap:wrap;margin:-8px 0 12px}#acct button,header #bStage{white-space:nowrap;padding:6px 10px;min-height:34px;font-size:13px}#acct{display:inline-flex}
+#more{margin:10px 0}body.stage #srch,body.stage #vidBar{display:none}
+@media print{#sgBar,#toast,#ytWrap,#live,#srch,#vidBar{display:none!important}}
 .erow{display:flex;gap:6px;align-items:center;margin-bottom:8px}.erow input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:10px;padding:8px 10px}
 .erow .tm{min-width:64px;font-variant-numeric:tabular-nums;font-size:13px;padding:8px 6px}.erow button{flex:none;padding:6px 8px}
 @media (max-width:560px){.erow{flex-wrap:wrap}.erow input{flex:1 1 100%;order:2}}
@@ -269,13 +279,17 @@ body.stage #live{display:none}
 </head>
 <body>
 <main>
-<header><h1>Chord<span>Flow</span></h1><button id="bStage" class="ghost">Stage view</button></header>
-<section id="load"><label class="file"><input type="file" id="fp" hidden><span>Choose a song file (MP3, WAV, M4A)</span></label><div class="lvbar"><button id="lvGo" class="primary big">Listen to a song</button><span class="hint">Uses the microphone. Nothing is uploaded.</span></div>
+<header><h1>Chord<span>Flow</span></h1><span id="acct"></span><button id="bStage" class="ghost">Stage view</button></header>
+<section id="load"><div id="srch"><input id="q" type="search" placeholder="Search a song or artist" autocomplete="off" aria-label="Search for a song"><div id="qmsg" role="status"></div><div id="qres"></div>
+<div id="askBox" hidden><b id="askTitle"></b><p id="askTxt"></p><button id="askBtn" class="primary">Ask for this chart</button></div>
+<div id="vidPick" hidden><b id="vidTitle"></b><p id="vidMsg"></p><div id="vidList"></div><div class="row" style="gap:8px;flex-wrap:wrap"><input id="vidUrl" type="text" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link"><button id="vidGo">Use this video</button></div></div></div><div class="lvbar"><button id="lvGo" class="primary big">Listen to a song</button><span class="hint">Uses the microphone. Nothing is uploaded.</span></div>
+<details class="dopt" id="more"><summary>Use your own audio file</summary><label class="file"><input type="file" id="fp" hidden><span>Choose a song file (MP3, WAV, M4A)</span></label></details>
 <div id="st">Analysis runs on your device. Nothing is uploaded. A 3-minute song takes about 10 seconds.</div><div id="pg"><i></i></div>
 <details class="dopt" id="ytBox"><summary>Or play along with a YouTube link</summary><div class="row" style="flex-wrap:wrap;gap:8px"><input id="ytUrl" type="text" inputmode="url" placeholder="YouTube link" aria-label="YouTube link" style="flex:1 1 240px;min-height:38px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)"><label class="ghostfile">Chart file<input type="file" id="ytChart" accept=".json,application/json"></label><button id="ytGo" class="primary">Start</button></div><div id="ytMsg" role="status"></div><p class="hint">The video plays in YouTube’s own player. ChordFlow never copies the audio. The chart file comes from the catalog, or from analyze.py run on your own copy of the song.</p></details></section>
 <section id="live" hidden><div class="lvtop"><span id="lvKey"></span><span id="lvTime"></span></div><div id="lvNow" aria-live="polite">–</div><div id="lvHist"></div><div id="lvLoop"></div>
 <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button id="lvStop" class="primary" hidden>Stop</button><select id="lvKeySel" aria-label="Key"></select><select id="lvTri" aria-label="Chord detail"><option value="t">Triads</option><option value="s">With 7ths</option></select></div>
 <div id="lvAfter" class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap" hidden><button id="lvChart" class="primary">Make a full chart</button><button id="lvDrop" class="ghost">Discard</button></div><div id="lvMsg" role="status"></div></section>
+<div id="vidBar" hidden><button id="vidBack" class="ghost">← Search</button><button id="vidChange" class="ghost">Wrong video?</button><button id="vidSave" class="ghost">Save this video and timing for everyone</button></div>
 <div id="ytWrap" hidden><iframe id="ytf" title="Video"></iframe></div>
 <section id="ctl" hidden>
 <h2 id="ttl"></h2><div id="mk"></div>
@@ -1795,22 +1809,28 @@ function chartToR(d){
  const bass=segs.map(s=>{const pc=s.slash>=0?s.slash:s.r;return{t0:s.t0,t1:s.t1,m:40+((pc-4+12)%12)}});
  return{segs,key:k,bpm,beats,phase:Number.isInteger(d.phase)?d.phase:0,dur,nb,bass};
 }
-async function loadChart(file,url){
- const id=ytIdOf(url);
- if(!id){$("ytMsg").textContent="That doesn’t look like a YouTube link.";return}
- if(!file){$("ytMsg").textContent="Choose the chart file for this song too (the .json from analyze.py or the catalog).";return}
- let d,r;try{d=JSON.parse(await file.text());d=d.data||d;r=chartToR(d)}catch(e){$("ytMsg").textContent=e.message||"Couldn’t read that chart file.";return}
- ytStop();
- const title=(file.name||"chart").replace(/\.chordflow-notes\.json$|\.json$/i,"");
- S={...r,autoSegs:r.segs,fx:new Array(r.nb).fill(null),items:[],vPin:{},gPin:{},beats0:r.beats.slice(),cOff:0,phase0:r.phase,hold:false,shift:0,nt:"c",ac:"a",ex:0,pcm:null,sr:0,dur:r.dur,lyr:null,lyOff:0,cid:"yt-"+id,fromChart:true};
- $("lyTitle").value=title;$("lyArtist").value="";$("lyText").value="";lyMsg("");LP={a:null,b:null};
+function chartStart(d,o){
+ const r=chartToR(d);ytStop();
+ const title=o.title||"Chart";
+ S={...r,autoSegs:r.segs,fx:new Array(r.nb).fill(null),items:[],vPin:{},gPin:{},beats0:r.beats.slice(),cOff:0,phase0:r.phase,hold:false,shift:0,nt:"c",ac:"a",ex:0,pcm:null,sr:0,dur:r.dur,lyr:null,lyOff:0,cid:o.cid||("yt-"+(o.id||"none")),fromChart:true,mbid:o.mbid||null,chart:d};
+ $("lyTitle").value=title;$("lyArtist").value=o.artist||"";$("lyText").value="";lyMsg("");LP={a:null,b:null};
  $("sb").max=r.dur;$("ttl").textContent=title;
  S.id=songId();sgWatch();
  if(d.notes&&Array.isArray(d.notes.other)&&d.version===1){S.an=d;S.heardC={};anUi()}
  $("ctl").hidden=false;$("views").hidden=false;$("sn").value="c";$("sa").value="a";$("sx").value="0";
  $("sp").step=".25";$("sp").value=1;$("spv").textContent="1.00×";
- ytStart(id);refresh();setTab("c");
- $("st").textContent=S.disp.length+" chords from the chart. If the chords run early or late against this video, use the chord offset under Display options.";
+ if(o.offset)setCOffRaw(+o.offset);
+ if(o.id)ytStart(o.id);
+ $("load").hidden=true;$("vidBar").hidden=false;$("vidChange").hidden=$("vidSave").hidden=!o.mbid;
+ refresh();setTab("c");
+ $("st").textContent=S.disp.length+" chords.";
+}
+async function loadChart(file,url){
+ const id=ytIdOf(url);
+ if(!id){$("ytMsg").textContent="That doesn’t look like a YouTube link.";return}
+ if(!file){$("ytMsg").textContent="Choose the chart file for this song too (the .json from analyze.py or the catalog).";return}
+ let d;try{d=JSON.parse(await file.text());d=d.data||d;chartToR(d)}catch(e){$("ytMsg").textContent=e.message||"Couldn’t read that chart file.";return}
+ chartStart(d,{id,title:(file.name||"chart").replace(/\.chordflow-notes\.json$|\.json$/i,"")});
 }
 $("ytGo").onclick=()=>loadChart($("ytChart").files[0],$("ytUrl").value);
 
@@ -2027,6 +2047,115 @@ $("lvDrop").onclick=()=>{LIVE.rec=[];LIVE.recN=0;LIVE.ev=[];LIVE.cur=null;$("liv
 
 (()=>{const o=['<option value="">Key: auto</option>'];[0,1].forEach(m=>{for(let r=0;r<12;r++)o.push(`<option value="${r}|${m}">${LV.SHARP[r]}${m?" minor":" major"}</option>`)});$("lvKeySel").innerHTML=o.join("")})();
 $("lvKeySel").onchange=e=>{const v=e.target.value;LIVE.key=v?{r:+v.split("|")[0],m:+v.split("|")[1]}:null;liveRender()};
+
+</script>
+<script>
+/* ---------- search -> chart -> YouTube video -> play along ---------- */
+/* Talks to the catalog API named in config.js (CF.api). Everything here degrades quietly when the API or sign-in is not set up. */
+const CFG=window.CF||{};
+const CAT={api:(CFG.api||"").replace(/\/$/,""),token:null,sb:null,user:null,results:[],cur:null,timer:0,seq:0};
+const cesc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const catTok=()=>CFG.devToken||CAT.token;                           // devToken only works against a server started with DEV_AUTH=1
+async function catApi(path,opt={}){
+ const h={};const t=catTok();if(t)h.Authorization="Bearer "+t;if(opt.body)h["Content-Type"]="application/json";
+ const r=await fetch(CAT.api+path,{method:opt.method||"GET",headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
+ let j=null;try{j=await r.json()}catch(e){}
+ if(!r.ok){const e=new Error((j&&j.error)||("HTTP "+r.status));e.status=r.status;throw e}
+ return j;
+}
+/* ----- sign-in (Supabase, Google) ----- */
+function catAcct(){
+ const el=$("acct");if(!CFG.supabaseUrl&&!CFG.devToken){el.innerHTML="";return}
+ el.innerHTML=catTok()?`<button id="acctOut" class="ghost" title="${cesc(CAT.user||"")}">Sign out</button>`:`<button id="acctIn" class="ghost">Sign in</button>`;
+ const i=$("acctIn");if(i)i.onclick=catSignIn;const o=$("acctOut");if(o)o.onclick=async()=>{try{await CAT.sb.auth.signOut()}catch(e){}CAT.token=null;CAT.user=null;catAcct()};
+}
+async function catSignIn(){
+ if(!CAT.sb){toast("Sign-in isn’t set up yet.");return}
+ try{await CAT.sb.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.origin+location.pathname}})}catch(e){toast("Couldn’t start sign-in.")}
+}
+async function catAuthInit(){
+ if(CFG.devToken){CAT.user="test user";catAcct();return}
+ if(!CFG.supabaseUrl||!CFG.supabaseKey){catAcct();return}
+ try{
+  const m=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm");
+  CAT.sb=m.createClient(CFG.supabaseUrl,CFG.supabaseKey);
+  const set=s=>{CAT.token=s?s.access_token:null;CAT.user=s&&s.user?(s.user.email||"Signed in"):null;catAcct()};
+  const {data}=await CAT.sb.auth.getSession();set(data.session);CAT.sb.auth.onAuthStateChange((_e,s)=>set(s));
+ }catch(e){catAcct()}
+}
+/* ----- search ----- */
+function catMsg(m){$("qmsg").textContent=m||""}
+function catRows(){
+ $("qres").innerHTML=CAT.results.map((r,i)=>{
+  const meta=[r.artist,r.year,r.kind&&r.kind!=="studio"?r.kind:null].filter(Boolean).join(" · ");
+  const chip=r.analyzed?`<span class="chip ok">Chart ready</span>`:`<span class="chip">No chart yet${r.requests?" · "+r.requests+" asked":""}</span>`;
+  return `<button class="res" data-i="${i}"><span class="rt"><b>${cesc(r.title)}</b><small>${cesc(meta)}</small></span>${chip}</button>`}).join("");
+}
+async function catSearch(q){
+ const my=++CAT.seq;
+ if(q.trim().length<2){CAT.results=[];catRows();catMsg("");return}
+ catMsg("Searching…");
+ try{
+  const j=await catApi("/api/search?q="+encodeURIComponent(q.trim()));
+  if(my!==CAT.seq)return;
+  CAT.results=j.results||[];catRows();catMsg(CAT.results.length?"":"Nothing found. Try the artist and song name.");
+ }catch(e){if(my===CAT.seq){CAT.results=[];catRows();catMsg("Couldn’t reach the song catalog. Check your connection, or use your own file below.")}}
+}
+$("q").oninput=e=>{clearTimeout(CAT.timer);CAT.timer=setTimeout(()=>catSearch(e.target.value),350)};
+$("qres").onclick=e=>{const b=e.target.closest(".res");if(!b)return;const r=CAT.results[+b.dataset.i];if(!r)return;r.analyzed?catOpen(r):catAskPanel(r)};
+/* ----- a song with no chart yet ----- */
+function catAskPanel(r){
+ CAT.cur=r;$("vidPick").hidden=true;$("askBox").hidden=false;
+ $("askTitle").textContent=r.title+" — "+r.artist;
+ $("askTxt").textContent=r.requests?`${r.requests} ${r.requests===1?"person has":"people have"} asked for this one.`:"Nobody has asked for this one yet.";
+ $("askBtn").textContent=catTok()?"Ask for this chart":"Sign in to ask for this chart";$("askBtn").disabled=false;
+ $("askBox").scrollIntoView({block:"nearest",behavior:"smooth"});
+}
+$("askBtn").onclick=async()=>{
+ const r=CAT.cur;if(!r)return;
+ if(!catTok()){catSignIn();return}
+ $("askBtn").disabled=true;
+ try{const j=await catApi("/api/recordings/"+encodeURIComponent(r.mbid)+"/request",{method:"POST",body:{recording:r}});
+  r.requests=j.requests;catRows();$("askTxt").textContent=`Thanks. ${j.requests} ${j.requests===1?"person has":"people have"} asked for this chart. It appears in search once it’s made.`;$("askBtn").textContent="Requested"}
+ catch(e){$("askBtn").disabled=false;$("askTxt").textContent=e.status===429?"You’ve reached today’s limit for requests.":"Couldn’t send the request. Try again."}
+};
+/* ----- open a charted song: chart + video ----- */
+async function catOpen(r){
+ CAT.cur=r;$("askBox").hidden=true;$("vidPick").hidden=true;catMsg("Loading the chart…");
+ let j;try{j=await catApi("/api/recordings/"+encodeURIComponent(r.mbid))}catch(e){catMsg("Couldn’t load that chart.");return}
+ catMsg("");const a=j.analysis;if(!a){catMsg("That song has no chart yet.");return}
+ CAT.chart=a.data;CAT.rec=j.recording;CAT.ver=a.version;
+ const v=a.data.video;
+ if(v&&v.id)catPlay(v.id,v.offset||0);else catVideoPicker();
+}
+function catPlay(id,offset){
+ const r=CAT.rec;
+ try{chartStart(CAT.chart,{id,offset,title:r.title,artist:r.artist,cid:"mb-"+r.mbid,mbid:r.mbid})}catch(e){catMsg("That chart file is damaged.");return}
+ $("vidPick").hidden=true;window.scrollTo({top:0});
+}
+async function catVideoPicker(){
+ const r=CAT.rec;$("vidPick").hidden=false;$("vidTitle").textContent=`Choose the video for “${r.title}”`;$("vidList").innerHTML="";$("vidMsg").textContent="Looking for videos…";
+ try{
+  const j=await catApi("/api/youtube?q="+encodeURIComponent(r.artist+" "+r.title));
+  CAT.vids=j.results||[];
+  $("vidList").innerHTML=CAT.vids.map((v,i)=>`<button class="res" data-i="${i}"><span class="rt"><b>${cesc(v.title)}</b><small>${cesc(v.channel)}</small></span><span class="chip">Use</span></button>`).join("");
+  $("vidMsg").textContent=CAT.vids.length?"Pick the one that matches the recording. You can also paste a link.":(j.error==="no_key"?"Video search isn’t set up yet. Paste a YouTube link instead.":"No videos found. Paste a YouTube link instead.");
+ }catch(e){$("vidMsg").textContent="Couldn’t search for videos. Paste a YouTube link instead."}
+}
+$("vidList").onclick=e=>{const b=e.target.closest(".res");if(b)catPlay(CAT.vids[+b.dataset.i].id,0)};
+$("vidGo").onclick=()=>{const id=ytIdOf($("vidUrl").value);if(!id){$("vidMsg").textContent="That doesn’t look like a YouTube link.";return}catPlay(id,0)};
+$("vidChange").onclick=()=>{if(CAT.chart)catVideoPicker()};
+/* send "this video, with this offset" to the moderators */
+$("vidSave").onclick=async()=>{
+ if(!S||!S.mbid||!YT.id)return;if(!catTok()){catSignIn();return}
+ try{await catApi("/api/recordings/"+encodeURIComponent(S.mbid)+"/suggestions",{method:"POST",body:{kind:"video",payload:{id:YT.id,offset:Math.round((S.cOff||0)*100)/100}}});toast("Sent. A moderator will check it before it changes for everyone.")}
+ catch(e){toast(e.status===429?"Daily limit reached.":"Couldn’t send that.")}
+};
+if(!CAT.api){catMsg("The song catalog isn’t connected yet. You can still use your own audio file or listen with the microphone.");$("q").disabled=true}
+catAuthInit();
+
+/* back to search */
+$("vidBack").onclick=()=>{try{au.pause()}catch(e){}ytStop();S=null;$("ctl").hidden=true;$("views").hidden=true;$("vidBar").hidden=true;$("load").hidden=false;$("st").textContent="";window.scrollTo({top:0});$("q").focus()};
 
 </script>
 <script>if("serviceWorker"in navigator&&/^https?:/.test(location.protocol))addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))</script>

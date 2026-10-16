@@ -5,6 +5,7 @@
   2. python worker/publish.py song.chordflow-notes.json --search "Honeymoon Avenue Ariana Grande"
      (lists matches; pick one with --pick 1)  or give --mbid directly.
 
+Add --youtube <link> so the page can play the matching video (--offset N if it starts N seconds later or earlier).
 Env: CATALOG_URL (default http://localhost:8000), CATALOG_TOKEN (a moderator or worker token).
 Only chords, beats and timing are uploaded. The audio file never leaves your computer."""
 import argparse, json, os, sys
@@ -23,6 +24,8 @@ def main():
     ap.add_argument("--mbid")
     ap.add_argument("--candidate", action="store_true", help="store as a candidate (for comparison) instead of the official version")
     ap.add_argument("--pipeline", default=None)
+    ap.add_argument("--youtube", default=None, help="YouTube link or id of the video that matches this recording")
+    ap.add_argument("--offset", type=float, default=0.0, help="seconds the YouTube video is ahead (+) or behind (-) the file you analyzed")
     a = ap.parse_args()
     base = os.environ.get("CATALOG_URL", "http://localhost:8000").rstrip("/")
     tok = os.environ.get("CATALOG_TOKEN")
@@ -48,6 +51,12 @@ def main():
         if input("Publish anyway? [y/N] ").lower() != "y":
             return
     data = from_analysis_file(d, a.pipeline or ("%s" % d.get("model", "htdemucs")))
+    if a.youtube:
+        import re
+        m = re.search(r"(?:v=|youtu\.be/|embed/|shorts/)([A-Za-z0-9_-]{11})", a.youtube) or re.fullmatch(r"([A-Za-z0-9_-]{11})", a.youtube.strip())
+        if not m:
+            sys.exit("That does not look like a YouTube link.")
+        data["video"] = {"id": m.group(1), "offset": a.offset}
     r = requests.post(base + "/api/recordings/publish" + ("?as=candidate" if a.candidate else ""), json={"recording": rec, "data": data}, headers=H, timeout=60)
     print(r.status_code, r.text)
 

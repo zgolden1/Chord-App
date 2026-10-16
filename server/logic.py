@@ -4,7 +4,9 @@ import copy, json
 
 NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 QUAL = ["", "m", "7", "maj7", "m7", "sus2", "sus4", "dim", "aug", "m7b5", "6", "m6"]
-KINDS = ("chord", "key", "bpm", "voicing", "shape", "sync")
+KINDS = ("chord", "key", "bpm", "voicing", "shape", "sync", "video")
+import re as _re
+YT_ID = _re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 
 def chord_name(c):
@@ -57,6 +59,11 @@ def validate(kind, p, dur):
         sh = p.get("sh")
         if not (isinstance(p.get("key"), str) and isinstance(sh, list) and len(sh) == 6 and all(_int(f, -1, 24) for f in sh)):
             return "bad guitar shape"
+    elif kind == "video":
+        if not (isinstance(p.get("id"), str) and YT_ID.match(p["id"])):
+            return "bad YouTube id"
+        if not (isinstance(p.get("offset", 0), (int, float)) and not isinstance(p.get("offset", 0), bool) and abs(p.get("offset", 0)) <= 30):
+            return "offset must be within 30 seconds"
     elif kind == "sync":
         lyr = p.get("lyr", [])
         if not (_int(p.get("phase"), 0, 3) and isinstance(p.get("cOff", 0), (int, float)) and abs(p.get("cOff", 0)) <= 3):
@@ -110,6 +117,8 @@ def apply_suggestion(kind, p, data):
         d["bpm"] = p["bpm"]
     elif kind in ("voicing", "shape"):
         d.setdefault("voicings", {})[("k:" if kind == "voicing" else "g:") + p["key"]] = {k: v for k, v in p.items() if k != "key"}
+    elif kind == "video":
+        d["video"] = {"id": p["id"], "offset": round(float(p.get("offset", 0)), 2)}
     elif kind == "sync":
         d["sync"] = {"phase": p["phase"], "cOff": p.get("cOff", 0), "lyr": p.get("lyr", [])}
     return d

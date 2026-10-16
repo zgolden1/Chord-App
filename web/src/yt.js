@@ -68,21 +68,27 @@ function chartToR(d){
  const bass=segs.map(s=>{const pc=s.slash>=0?s.slash:s.r;return{t0:s.t0,t1:s.t1,m:40+((pc-4+12)%12)}});
  return{segs,key:k,bpm,beats,phase:Number.isInteger(d.phase)?d.phase:0,dur,nb,bass};
 }
-async function loadChart(file,url){
- const id=ytIdOf(url);
- if(!id){$("ytMsg").textContent="That doesn’t look like a YouTube link.";return}
- if(!file){$("ytMsg").textContent="Choose the chart file for this song too (the .json from analyze.py or the catalog).";return}
- let d,r;try{d=JSON.parse(await file.text());d=d.data||d;r=chartToR(d)}catch(e){$("ytMsg").textContent=e.message||"Couldn’t read that chart file.";return}
- ytStop();
- const title=(file.name||"chart").replace(/\.chordflow-notes\.json$|\.json$/i,"");
- S={...r,autoSegs:r.segs,fx:new Array(r.nb).fill(null),items:[],vPin:{},gPin:{},beats0:r.beats.slice(),cOff:0,phase0:r.phase,hold:false,shift:0,nt:"c",ac:"a",ex:0,pcm:null,sr:0,dur:r.dur,lyr:null,lyOff:0,cid:"yt-"+id,fromChart:true};
- $("lyTitle").value=title;$("lyArtist").value="";$("lyText").value="";lyMsg("");LP={a:null,b:null};
+function chartStart(d,o){
+ const r=chartToR(d);ytStop();
+ const title=o.title||"Chart";
+ S={...r,autoSegs:r.segs,fx:new Array(r.nb).fill(null),items:[],vPin:{},gPin:{},beats0:r.beats.slice(),cOff:0,phase0:r.phase,hold:false,shift:0,nt:"c",ac:"a",ex:0,pcm:null,sr:0,dur:r.dur,lyr:null,lyOff:0,cid:o.cid||("yt-"+(o.id||"none")),fromChart:true,mbid:o.mbid||null,chart:d};
+ $("lyTitle").value=title;$("lyArtist").value=o.artist||"";$("lyText").value="";lyMsg("");LP={a:null,b:null};
  $("sb").max=r.dur;$("ttl").textContent=title;
  S.id=songId();sgWatch();
  if(d.notes&&Array.isArray(d.notes.other)&&d.version===1){S.an=d;S.heardC={};anUi()}
  $("ctl").hidden=false;$("views").hidden=false;$("sn").value="c";$("sa").value="a";$("sx").value="0";
  $("sp").step=".25";$("sp").value=1;$("spv").textContent="1.00×";
- ytStart(id);refresh();setTab("c");
- $("st").textContent=S.disp.length+" chords from the chart. If the chords run early or late against this video, use the chord offset under Display options.";
+ if(o.offset)setCOffRaw(+o.offset);
+ if(o.id)ytStart(o.id);
+ $("load").hidden=true;$("vidBar").hidden=false;$("vidChange").hidden=$("vidSave").hidden=!o.mbid;
+ refresh();setTab("c");
+ $("st").textContent=S.disp.length+" chords.";
+}
+async function loadChart(file,url){
+ const id=ytIdOf(url);
+ if(!id){$("ytMsg").textContent="That doesn’t look like a YouTube link.";return}
+ if(!file){$("ytMsg").textContent="Choose the chart file for this song too (the .json from analyze.py or the catalog).";return}
+ let d;try{d=JSON.parse(await file.text());d=d.data||d;chartToR(d)}catch(e){$("ytMsg").textContent=e.message||"Couldn’t read that chart file.";return}
+ chartStart(d,{id,title:(file.name||"chart").replace(/\.chordflow-notes\.json$|\.json$/i,"")});
 }
 $("ytGo").onclick=()=>loadChart($("ytChart").files[0],$("ytUrl").value);

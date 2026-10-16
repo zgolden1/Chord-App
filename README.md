@@ -29,14 +29,30 @@ python worker/analyze.py "My Song.mp3"                      # needs: pip install
 ```
 Browser tests need `pip install playwright` and a Chromium install, then `python tests/make_synth.py && python tests/livetest.py /tmp/synth.wav 40`.
 
-## What works and what has not been tested
-Tested here: the web app in a headless browser (chords, editor, suggestions and moderation with a mock backend, Keys and Guitar tabs, YouTube play-along with a simulated player, live listening on synthetic audio), and the API end to end on SQLite.
+## The flow
+1. Open the site. 2. Search a song (MusicBrainz, via your API). 3. Tap it: the chart loads from the catalog and its YouTube video appears in the official player. 4. Play: the chords follow the video. 5. "Use your own audio file" and "Listen to a song" sit below as the secondary ways in.
+If a song has no chart yet, the page shows "Ask for this chart" (needs sign-in). You see the most-requested uncharted songs at `/api/moderation/requests` and make them with `worker/analyze.py` + `worker/publish.py --youtube <link>`.
+If a chart has no video yet, the page lists YouTube candidates (needs `YOUTUBE_API_KEY` on the server), or you can paste a link. "Save this video and timing for everyone" sends it to moderators.
 
-Not tested: a real YouTube video, the Demucs + Basic Pitch pipeline, PostgreSQL and Supabase sign-in, the live MusicBrainz call, any real phone (iPhone or Android), the GitHub Actions workflows, and the app shells in `mobile/`.
+## What you still have to set up (once)
+| What | Where | Goes in |
+|---|---|---|
+| API online | Render > New > Blueprint > this repo | `render.yaml` does the rest |
+| Database | Supabase (free) | `DATABASE_URL` in Render |
+| Google sign-in | Supabase > Authentication > Providers > Google (needs a Google Cloud OAuth client) | `SUPABASE_JWT_SECRET` in Render; project URL and anon key in `docs/config.js` |
+| Video search | Google Cloud > YouTube Data API v3 > API key | `YOUTUBE_API_KEY` in Render |
+| MusicBrainz contact | your email | `MB_CONTACT` in Render |
+| Page address of the API | after Render is live | `api` in `docs/config.js`, then push |
+Keys that must stay secret (database, JWT secret, YouTube key, worker token) go only in Render's settings. `docs/config.js` is public by design: only the API address, the Supabase URL and the Supabase anon key belong there.
+
+## What works and what has not been tested
+Tested here: the web app in a headless browser (chords, editor, Keys and Guitar tabs, the whole search > chart > video > play flow against a real API server with a simulated YouTube player, live listening on synthetic audio), and the API end to end on SQLite (54 checks).
+
+Not tested: a real YouTube video, the live YouTube Data API, Google sign-in through Supabase, the Demucs + Basic Pitch pipeline, PostgreSQL and Supabase sign-in, the live MusicBrainz call, any real phone (iPhone or Android), the GitHub Actions workflows, and the app shells in `mobile/`.
 
 Live listening, honestly: on clean, simple audio it reads the loop correctly. On a full studio recording it gets the shape of the loop but is often wrong on individual chords (it read B over D# as D#m, and matched the offline chart on only about half of the individual chord roots on the one real song I tried). Treat it as a fast sketch of the progression, and use "Make a full chart" for the accurate version.
 
-Not built yet: search and the shared catalog inside the page (the API exists, the page does not call it yet), the Modal GPU worker, and Shazam-style song naming.
+Not built yet: the page does not yet send chord/voicing/sync corrections to the API (they still use the earlier in-page suggestion box), the Modal GPU worker, and Shazam-style song naming.
 
 ## Rights and notices
 The code is published to be read, not reused: see `LICENSE` (all rights reserved). ChordFlow is not affiliated with, endorsed by or connected to YouTube, Google, Chordify, Shazam, Apple or any record label or publisher. All song, artist and recording names belong to their owners and are used only to identify what a chart describes.
