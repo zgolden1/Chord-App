@@ -51,6 +51,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,[role=tab]:focus-v
 .blk.nx{box-shadow:inset 0 0 0 2px var(--amber)}
 .blk.lp{border-bottom-color:var(--amber)}
 .blk.on{background:var(--amber);color:var(--on)}.blk.on small,.blk.on em,.blk.on.u b{color:var(--on)}
+.blk.ps{min-height:72px}.blk.ps b{font-size:15px;font-weight:600;color:var(--mute)}.blk.ps b.m{font-size:13px}.blk.ps b.l{font-size:12px}.blk.ps em{display:none}.blk.ps small{font-size:11px}.blk.ps.on b{color:var(--on)}
+.bar .c.ps{font-size:12px;font-weight:500;color:var(--mute)}
 /* sheet */
 #sheetBar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:14px;color:var(--mute)}
 #sheet{background:var(--bg)}
@@ -299,7 +301,7 @@ body.stage #live{display:none}
 <input id="pubQ" type="search" placeholder="Search the recording (artist and title)" aria-label="Recording"><div id="pubRes"></div>
 <input id="pubYt" type="text" inputmode="url" placeholder="YouTube link for this song (optional)" aria-label="YouTube link">
 <input id="pubTok" type="password" placeholder="Admin key (only if you are not signed in as a moderator)" aria-label="Admin key" autocomplete="off" hidden>
-<button id="pubGo" class="primary" disabled>Publish chart</button><div id="pubMsg" role="status"></div></div></details><div id="mk"></div>
+<label id="pubRepL" class="hint" hidden><input id="pubRep" type="checkbox"> Replace the current chart (moderators only). Leave unchecked to save this as a candidate.</label><button id="pubGo" class="primary" disabled>Publish chart</button><div id="pubMsg" role="status"></div></div></details><div id="mk"></div>
 <details class="dopt"><summary>Display options</summary><div class="row"><button id="tdn" aria-label="Down one semitone">−</button><select id="sk" aria-label="Key"></select><button id="tup" aria-label="Up one semitone">+</button>
 <select id="sn" aria-label="Notation"><option value="c">Chord names</option><option value="n">Nashville numbers</option><option value="r">Roman numerals</option></select>
 <select id="sa" aria-label="Sharps or flats"><option value="a">Sharps/flats: auto</option><option value="s">Always sharps (C#)</option><option value="f">Always flats (Db)</option></select>
@@ -560,7 +562,7 @@ async function analyze(x,sr,prog=()=>{}){
   a=Math.sqrt(a)+1e-9;b+=1e-9;for(let p=0;p<12;p++){Cb[j*12+p]/=a;Bb[j*12+p]/=b}}
  /* emission: template match + bass evidence */
  const E=new Float32Array(nb*24),LAM=1.5;
- for(let t=0;t<nb;t++)for(let k=0;k<24;k++){let s=0;for(let p=0;p<12;p++)s+=Cb[t*12+p]*TPL[k][p];const r=k%12;E[t*24+k]=s+LAM*(Bb[t*12+r]+.3*Bb[t*12+(r+7)%12])}
+ for(let t=0;t<nb;t++)for(let k=0;k<24;k++){let s=0;for(let p=0;p<12;p++)s+=Cb[t*12+p]*TPL[k][p];const r=k%12;E[t*24+k]=ChordDSP.BETA*(s+LAM*(Bb[t*12+r]+.3*Bb[t*12+(r+7)%12]))}
  /* bar phase: where do chords change most often? */
  const nov=new Float32Array(nb);for(let t=1;t<nb;t++){let s=0;for(let p=0;p<12;p++)s+=Cb[t*12+p]*Cb[(t-1)*12+p];nov[t]=1-s}
  let phase=0,pb=-1;for(let ph=0;ph<4;ph++){let s=0,n=0;for(let t=ph;t<nb;t+=4){s+=nov[t];n++}s/=Math.max(n,1);if(s>pb){pb=s;phase=ph}}
@@ -569,11 +571,14 @@ async function analyze(x,sr,prog=()=>{}){
  let p=viterbi(E,nb,stays);
  /* drop rarely used chords, decode again */
  const use=new Float32Array(24);for(const k of p)use[k]++;
- const E2=Float32Array.from(E);for(let t=0;t<nb;t++)for(let k=0;k<24;k++)if(use[k]/nb<.03)E2[t*24+k]=-5;
+ const E2=Float32Array.from(E);for(let t=0;t<nb;t++)for(let k=0;k<24;k++)if(use[k]/nb<.03)E2[t*24+k]=-5*ChordDSP.BETA;
  p=viterbi(E2,nb,stays);
  /* segments (merge 1-beat blips) */
  let runs=[];for(let t=0;t<nb;t++){const l=runs[runs.length-1];if(l&&l.k===p[t])l.n++;else runs.push({k:p[t],a:t,n:1})}
- const m=[];for(const r of runs){const l=m[m.length-1];if(l&&(r.n<2||l.k===r.k)){l.n+=r.n}else m.push({...r})}
+ /* a one-beat chord is kept only when the audio clearly favours it over the chord before it (a passing chord, e.g. F# E F#) */
+ const m=[];for(const r of runs){const l=m[m.length-1];
+  const keep=r.n>=2||(l&&r.n===1&&r.a>0&&E[r.a*24+r.k]-E[r.a*24+l.k]>=ChordDSP.PASSG*ChordDSP.BETA);
+  if(l&&(!keep||l.k===r.k)){l.n+=r.n}else m.push({...r})}
  if(m.length>1&&m[0].n<2){m[1].a=m[0].a;m[1].n+=m[0].n;m.shift()}
  /* describe each segment */
  const segs=[];
@@ -616,7 +621,7 @@ async function analyze(x,sr,prog=()=>{}){
  prog(1);
  return{segs,key,bpm:Math.round(bt.bpm),beats,phase,dur,nb,bass};
 }
-return{analyze,NSH,BASS_OCT,T7:.7,TM7:.8,TX:1.6,INV:.04,INV2:.03};
+return{analyze,NSH,BASS_OCT,T7:.7,TM7:.8,TX:1.6,INV:.04,INV2:.03,BETA:3,PASSG:.5};
 })();
 if(typeof module!=="undefined")module.exports=ChordDSP;
 
@@ -1081,6 +1086,9 @@ function build(){
  S.segs.forEach((s,i)=>{const p=parts(s),l=S.disp[S.disp.length-1];
   if(l&&l.main===p.main&&l.ex===p.ex){l.t1=s.t1;l.b1=s.b1;l.unsure=l.unsure&&s.unsure}
   else S.disp.push({main:p.main,ex:p.ex,t0:s.t0,t1:s.t1,b0:s.b0,b1:s.b1,seg:s,unsure:s.unsure,alt:s.unsure?altName(s):""})});
+ /* passing chords: one beat, or two beats squeezed between longer chords. They are drawn small and quiet so the main chords stand out. */
+ S.disp.forEach((g,i)=>{const n=g.b1-g.b0,pv=S.disp[i-1],nx=S.disp[i+1];
+  g.pass=n<=1||(n<=2&&!!pv&&!!nx&&pv.b1-pv.b0>=3&&nx.b1-nx.b0>=3)});
  S.bc=new Array(S.nb).fill(-1);S.disp.forEach((g,i)=>{for(let b=g.b0;b<g.b1&&b<S.nb;b++)S.bc[b]=i});
 }
 function refresh(){
@@ -1088,7 +1096,7 @@ function refresh(){
  const k=(S.key.r+S.shift)%12;
  $("mk").textContent="Key of "+spell(k)+(S.key.m?" minor":" major")+", about "+S.bpm+" BPM";
  $("sk").innerHTML=[...Array(12).keys()].map(p=>`<option value="${p}"${p===k?" selected":""}>${spell(p)}${S.key.m?" minor":" major"}</option>`).join("");
- $("strip").innerHTML=S.disp.map((g,i)=>`<div class="blk${g.unsure?" u":""}${g.seg.pend?" pend":g.seg.pinned?" fx":""}" data-i="${i}"${g.alt?` title="Could also be ${g.alt}"`:""}><b class="${sizeCls(g.main)}">${g.main}</b><em>${g.ex}</em><small>${fmt(g.t0)}${g.alt?" · or "+g.alt:""}</small><button class="ed" data-i="${i}" aria-label="Edit chord ${g.main}">✎</button></div>`).join("");
+ $("strip").innerHTML=S.disp.map((g,i)=>`<div class="blk${g.unsure?" u":""}${g.pass?" ps":""}${g.seg.pend?" pend":g.seg.pinned?" fx":""}" data-i="${i}"${g.alt?` title="Could also be ${g.alt}"`:""}><b class="${sizeCls(g.main)}">${g.main}</b><em>${g.ex}</em><small>${fmt(g.t0)}${g.alt?" · or "+g.alt:""}</small><button class="ed" data-i="${i}" aria-label="Edit chord ${g.main}">✎</button></div>`).join("");
  buildSheet();S.bassBuilt=false;if(tab==="b")buildBass();buildLyrics();S.uc=ucList();lastK=null;if(tab==="k")buildKeys();if(tab==="g")buildGuitar();renderRev();renderSync();mark(true);
 }
 /* ---------- sheet ---------- */
@@ -1107,7 +1115,7 @@ function buildSheet(){
   while(b<m.b+m.n){const c=S.bc[b];let e=b;while(e<m.b+m.n&&S.bc[e]===c)e++;
    const g=S.disp[c],cont=(b===m.b&&c===prev);
    const txt=g?g.main:"";
-   cells+=`<div class="c ${sizeCls(txt)}${cont?" cont":""}" style="grid-column:${b-m.b+1}/${e-m.b+1}">${txt}${g&&g.ex&&!cont?`<i>${g.ex}</i>`:""}${g&&g.unsure&&!cont?" ?":""}</div>`;
+   cells+=`<div class="c ${sizeCls(txt)}${cont?" cont":""}${g&&g.pass?" ps":""}" style="grid-column:${b-m.b+1}/${e-m.b+1}">${txt}${g&&g.ex&&!cont?`<i>${g.ex}</i>`:""}${g&&g.unsure&&!cont?" ?":""}</div>`;
    prev=c;b=e}
   h+=`<div class="bar" data-m="${mi}" style="--n:${m.n}"><span class="no">${mi+1}</span>${cells}</div>`});
  $("bars").innerHTML=h;
@@ -2173,7 +2181,7 @@ $("pubQ").oninput=e=>{clearTimeout(PUB.timer);PUB.timer=setTimeout(async()=>{
   $("pubRes").innerHTML=PUB.list.map((r,i)=>`<button class="res" data-i="${i}"><span class="rt"><b>${cesc(r.title)}</b><small>${cesc([r.artist,r.year,r.length_s?fmt(r.length_s):null,r.kind&&r.kind!=="studio"?r.kind:null].filter(Boolean).join(" · "))}</small></span>${r.analyzed?'<span class="chip ok">Has a chart</span>':""}</button>`).join("")}
  catch(err){$("pubRes").innerHTML="";$("pubMsg").textContent="Couldn’t reach the catalog: "+(err.message||err)}},350)};
 $("pubRes").onclick=e=>{const b=e.target.closest(".res");if(!b)return;PUB.pick=PUB.list[+b.dataset.i];[...$("pubRes").children].forEach(c=>c.classList.toggle("sel",c===b));
- const d=Math.abs((PUB.pick.length_s||S.dur)-S.dur);$("pubMsg").textContent=PUB.pick.analyzed?"This recording already has a chart, so yours will be saved as a candidate for comparison.":(d>8?`Careful: your file is ${fmt(S.dur)} but this recording is ${fmt(PUB.pick.length_s)}. A different version won’t line up.`:"");$("pubGo").disabled=false};
+ const d=Math.abs((PUB.pick.length_s||S.dur)-S.dur);$("pubRepL").hidden=!PUB.pick.analyzed;if(!PUB.pick.analyzed)$("pubRep").checked=false;$("pubMsg").textContent=PUB.pick.analyzed?"This recording already has a chart. Yours is saved as a candidate unless you tick “Replace”.":(d>8?`Careful: your file is ${fmt(S.dur)} but this recording is ${fmt(PUB.pick.length_s)}. A different version won’t line up.`:"");$("pubGo").disabled=false};
 function pubData(){
  const r=S.autoSegs.map(g=>({t0:+g.t0.toFixed(3),t1:+g.t1.toFixed(3),r:g.r,q:g.q,xt:g.xt||[],slash:Number.isInteger(g.slash)?g.slash:-1,conf:+(g.conf||0).toFixed(3)}));
  const d={pipeline:"in-browser",duration:+S.dur.toFixed(2),key:{r:S.key.r,m:!!S.key.m},bpm:S.bpm,phase:S.phase0,beats:S.beats0.map(x=>+x.toFixed(3)),chords:r};
@@ -2184,7 +2192,7 @@ $("pubGo").onclick=async()=>{
  if(!PUB.pick||!S||!S.pcm)return;if($("pubYt").value.trim()&&!ytIdOf($("pubYt").value)){$("pubMsg").textContent="That doesn’t look like a YouTube link.";return}
  const tok=catTok()||$("pubTok").value.trim();if(!tok){$("pubMsg").textContent="Sign in as a moderator, or enter the admin key.";return}
  $("pubGo").disabled=true;$("pubMsg").textContent="Publishing…";
- try{const j=await catApi("/api/recordings/publish"+(PUB.pick.analyzed?"?as=candidate":""),{method:"POST",token:tok,body:{recording:PUB.pick,data:pubData()}});
+ try{const j=await catApi("/api/recordings/publish"+(PUB.pick.analyzed?($("pubRep").checked?"?replace=1":"?as=candidate"):""),{method:"POST",token:tok,body:{recording:PUB.pick,data:pubData()}});
   $("pubMsg").textContent=j.status==="candidate"?"Saved as a candidate (the official chart was not changed).":"Published. It now appears in search for everyone.";$("pubTok").value=""}
  catch(e){$("pubGo").disabled=false;$("pubMsg").textContent=e.status===401||e.status===403?"That key or account isn’t allowed to publish.":"Couldn’t publish: "+e.message}
 };

@@ -114,7 +114,7 @@ $("pubQ").oninput=e=>{clearTimeout(PUB.timer);PUB.timer=setTimeout(async()=>{
   $("pubRes").innerHTML=PUB.list.map((r,i)=>`<button class="res" data-i="${i}"><span class="rt"><b>${cesc(r.title)}</b><small>${cesc([r.artist,r.year,r.length_s?fmt(r.length_s):null,r.kind&&r.kind!=="studio"?r.kind:null].filter(Boolean).join(" · "))}</small></span>${r.analyzed?'<span class="chip ok">Has a chart</span>':""}</button>`).join("")}
  catch(err){$("pubRes").innerHTML="";$("pubMsg").textContent="Couldn’t reach the catalog: "+(err.message||err)}},350)};
 $("pubRes").onclick=e=>{const b=e.target.closest(".res");if(!b)return;PUB.pick=PUB.list[+b.dataset.i];[...$("pubRes").children].forEach(c=>c.classList.toggle("sel",c===b));
- const d=Math.abs((PUB.pick.length_s||S.dur)-S.dur);$("pubMsg").textContent=PUB.pick.analyzed?"This recording already has a chart, so yours will be saved as a candidate for comparison.":(d>8?`Careful: your file is ${fmt(S.dur)} but this recording is ${fmt(PUB.pick.length_s)}. A different version won’t line up.`:"");$("pubGo").disabled=false};
+ const d=Math.abs((PUB.pick.length_s||S.dur)-S.dur);$("pubRepL").hidden=!PUB.pick.analyzed;if(!PUB.pick.analyzed)$("pubRep").checked=false;$("pubMsg").textContent=PUB.pick.analyzed?"This recording already has a chart. Yours is saved as a candidate unless you tick “Replace”.":(d>8?`Careful: your file is ${fmt(S.dur)} but this recording is ${fmt(PUB.pick.length_s)}. A different version won’t line up.`:"");$("pubGo").disabled=false};
 function pubData(){
  const r=S.autoSegs.map(g=>({t0:+g.t0.toFixed(3),t1:+g.t1.toFixed(3),r:g.r,q:g.q,xt:g.xt||[],slash:Number.isInteger(g.slash)?g.slash:-1,conf:+(g.conf||0).toFixed(3)}));
  const d={pipeline:"in-browser",duration:+S.dur.toFixed(2),key:{r:S.key.r,m:!!S.key.m},bpm:S.bpm,phase:S.phase0,beats:S.beats0.map(x=>+x.toFixed(3)),chords:r};
@@ -125,7 +125,7 @@ $("pubGo").onclick=async()=>{
  if(!PUB.pick||!S||!S.pcm)return;if($("pubYt").value.trim()&&!ytIdOf($("pubYt").value)){$("pubMsg").textContent="That doesn’t look like a YouTube link.";return}
  const tok=catTok()||$("pubTok").value.trim();if(!tok){$("pubMsg").textContent="Sign in as a moderator, or enter the admin key.";return}
  $("pubGo").disabled=true;$("pubMsg").textContent="Publishing…";
- try{const j=await catApi("/api/recordings/publish"+(PUB.pick.analyzed?"?as=candidate":""),{method:"POST",token:tok,body:{recording:PUB.pick,data:pubData()}});
+ try{const j=await catApi("/api/recordings/publish"+(PUB.pick.analyzed?($("pubRep").checked?"?replace=1":"?as=candidate"):""),{method:"POST",token:tok,body:{recording:PUB.pick,data:pubData()}});
   $("pubMsg").textContent=j.status==="candidate"?"Saved as a candidate (the official chart was not changed).":"Published. It now appears in search for everyone.";$("pubTok").value=""}
  catch(e){$("pubGo").disabled=false;$("pubMsg").textContent=e.status===401||e.status===403?"That key or account isn’t allowed to publish.":"Couldn’t publish: "+e.message}
 };

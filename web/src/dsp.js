@@ -168,7 +168,7 @@ async function analyze(x,sr,prog=()=>{}){
   a=Math.sqrt(a)+1e-9;b+=1e-9;for(let p=0;p<12;p++){Cb[j*12+p]/=a;Bb[j*12+p]/=b}}
  /* emission: template match + bass evidence */
  const E=new Float32Array(nb*24),LAM=1.5;
- for(let t=0;t<nb;t++)for(let k=0;k<24;k++){let s=0;for(let p=0;p<12;p++)s+=Cb[t*12+p]*TPL[k][p];const r=k%12;E[t*24+k]=s+LAM*(Bb[t*12+r]+.3*Bb[t*12+(r+7)%12])}
+ for(let t=0;t<nb;t++)for(let k=0;k<24;k++){let s=0;for(let p=0;p<12;p++)s+=Cb[t*12+p]*TPL[k][p];const r=k%12;E[t*24+k]=ChordDSP.BETA*(s+LAM*(Bb[t*12+r]+.3*Bb[t*12+(r+7)%12]))}
  /* bar phase: where do chords change most often? */
  const nov=new Float32Array(nb);for(let t=1;t<nb;t++){let s=0;for(let p=0;p<12;p++)s+=Cb[t*12+p]*Cb[(t-1)*12+p];nov[t]=1-s}
  let phase=0,pb=-1;for(let ph=0;ph<4;ph++){let s=0,n=0;for(let t=ph;t<nb;t+=4){s+=nov[t];n++}s/=Math.max(n,1);if(s>pb){pb=s;phase=ph}}
@@ -177,11 +177,14 @@ async function analyze(x,sr,prog=()=>{}){
  let p=viterbi(E,nb,stays);
  /* drop rarely used chords, decode again */
  const use=new Float32Array(24);for(const k of p)use[k]++;
- const E2=Float32Array.from(E);for(let t=0;t<nb;t++)for(let k=0;k<24;k++)if(use[k]/nb<.03)E2[t*24+k]=-5;
+ const E2=Float32Array.from(E);for(let t=0;t<nb;t++)for(let k=0;k<24;k++)if(use[k]/nb<.03)E2[t*24+k]=-5*ChordDSP.BETA;
  p=viterbi(E2,nb,stays);
  /* segments (merge 1-beat blips) */
  let runs=[];for(let t=0;t<nb;t++){const l=runs[runs.length-1];if(l&&l.k===p[t])l.n++;else runs.push({k:p[t],a:t,n:1})}
- const m=[];for(const r of runs){const l=m[m.length-1];if(l&&(r.n<2||l.k===r.k)){l.n+=r.n}else m.push({...r})}
+ /* a one-beat chord is kept only when the audio clearly favours it over the chord before it (a passing chord, e.g. F# E F#) */
+ const m=[];for(const r of runs){const l=m[m.length-1];
+  const keep=r.n>=2||(l&&r.n===1&&r.a>0&&E[r.a*24+r.k]-E[r.a*24+l.k]>=ChordDSP.PASSG*ChordDSP.BETA);
+  if(l&&(!keep||l.k===r.k)){l.n+=r.n}else m.push({...r})}
  if(m.length>1&&m[0].n<2){m[1].a=m[0].a;m[1].n+=m[0].n;m.shift()}
  /* describe each segment */
  const segs=[];
@@ -224,6 +227,6 @@ async function analyze(x,sr,prog=()=>{}){
  prog(1);
  return{segs,key,bpm:Math.round(bt.bpm),beats,phase,dur,nb,bass};
 }
-return{analyze,NSH,BASS_OCT,T7:.7,TM7:.8,TX:1.6,INV:.04,INV2:.03};
+return{analyze,NSH,BASS_OCT,T7:.7,TM7:.8,TX:1.6,INV:.04,INV2:.03,BETA:3,PASSG:.5};
 })();
 if(typeof module!=="undefined")module.exports=ChordDSP;
