@@ -34,6 +34,9 @@ Browser tests need `pip install playwright` and a Chromium install, then `python
 If a song has no chart yet, the page shows "Ask for this chart" (needs sign-in). You see the most-requested uncharted songs at `/api/moderation/requests` and make them with `worker/analyze.py` + `worker/publish.py --youtube <link>`.
 If a chart has no video yet, the page lists YouTube candidates (needs `YOUTUBE_API_KEY` on the server), or you can paste a link. "Save this video and timing for everyone" sends it to moderators.
 
+## Adding songs without Python
+Open the site, choose "Use your own audio file", wait ~10 seconds for the analysis, then open "Add this chart to the catalog": search the recording, paste its YouTube link, and publish. Sign in as a moderator, or paste the `WORKER_TOKEN` from Render's Environment tab into the admin-key box (it is cleared after each publish and never saved). Only chords and beat times are sent. A recording that already has a chart receives yours as a "candidate", never overwriting the official one.
+
 ## What you still have to set up (once)
 | What | Where | Goes in |
 |---|---|---|

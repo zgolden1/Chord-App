@@ -5,7 +5,7 @@ const CAT={api:(CFG.api||"").replace(/\/$/,""),token:null,sb:null,user:null,resu
 const cesc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const catTok=()=>CFG.devToken||CAT.token;                           // devToken only works against a server started with DEV_AUTH=1
 async function catApi(path,opt={}){
- const h={};const t=catTok();if(t)h.Authorization="Bearer "+t;if(opt.body)h["Content-Type"]="application/json";
+ const h={};const t=opt.token||catTok();if(t)h.Authorization="Bearer "+t;if(opt.body)h["Content-Type"]="application/json";
  const r=await fetch(CAT.api+path,{method:opt.method||"GET",headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
  let j=null;try{j=await r.json()}catch(e){}
  if(!r.ok){const e=new Error((j&&j.error)||("HTTP "+r.status));e.status=r.status;throw e}
@@ -104,3 +104,27 @@ catAuthInit();
 
 /* back to search */
 $("vidBack").onclick=()=>{try{au.pause()}catch(e){}ytStop();S=null;$("ctl").hidden=true;$("views").hidden=true;$("vidBar").hidden=true;$("load").hidden=false;$("st").textContent="";window.scrollTo({top:0});$("q").focus()};
+
+/* ----- publish a chart analyzed on this device (moderators, or the admin key from Render) ----- */
+const PUB={pick:null,seq:0,timer:0};
+setInterval(()=>{const on=!!(CAT.api&&S&&S.pcm);if($("pubBox").hidden===on){$("pubBox").hidden=!on;if(on){PUB.pick=null;$("pubMsg").textContent="";$("pubRes").innerHTML="";$("pubQ").value=$("lyTitle").value?($("lyArtist").value+" "+$("lyTitle").value).trim():"";$("pubGo").disabled=true}}$("pubTok").hidden=!!catTok()},800);
+$("pubQ").oninput=e=>{clearTimeout(PUB.timer);PUB.timer=setTimeout(async()=>{
+ const q=e.target.value.trim(),my=++PUB.seq;if(q.length<2){$("pubRes").innerHTML="";return}
+ try{const j=await catApi("/api/search?q="+encodeURIComponent(q));if(my!==PUB.seq)return;PUB.list=j.results||[];
+  $("pubRes").innerHTML=PUB.list.map((r,i)=>`<button class="res" data-i="${i}"><span class="rt"><b>${cesc(r.title)}</b><small>${cesc([r.artist,r.year,r.length_s?fmt(r.length_s):null,r.kind&&r.kind!=="studio"?r.kind:null].filter(Boolean).join(" · "))}</small></span>${r.analyzed?'<span class="chip ok">Has a chart</span>':""}</button>`).join("")}
+ catch(err){$("pubRes").innerHTML=""}},350)};
+$("pubRes").onclick=e=>{const b=e.target.closest(".res");if(!b)return;PUB.pick=PUB.list[+b.dataset.i];[...$("pubRes").children].forEach(c=>c.classList.toggle("sel",c===b));
+ const d=Math.abs((PUB.pick.length_s||S.dur)-S.dur);$("pubMsg").textContent=PUB.pick.analyzed?"This recording already has a chart, so yours will be saved as a candidate for comparison.":(d>8?`Careful: your file is ${fmt(S.dur)} but this recording is ${fmt(PUB.pick.length_s)}. A different version won’t line up.`:"");$("pubGo").disabled=false};
+function pubData(){
+ const r=S.autoSegs.map(g=>({t0:+g.t0.toFixed(3),t1:+g.t1.toFixed(3),r:g.r,q:g.q,xt:g.xt||[],slash:Number.isInteger(g.slash)?g.slash:-1,conf:+(g.conf||0).toFixed(3)}));
+ const d={pipeline:"in-browser",duration:+S.dur.toFixed(2),key:{r:S.key.r,m:!!S.key.m},bpm:S.bpm,phase:S.phase0,beats:S.beats0.map(x=>+x.toFixed(3)),chords:r};
+ const id=ytIdOf($("pubYt").value);if(id)d.video={id,offset:0};return d;
+}
+$("pubGo").onclick=async()=>{
+ if(!PUB.pick||!S||!S.pcm)return;if($("pubYt").value.trim()&&!ytIdOf($("pubYt").value)){$("pubMsg").textContent="That doesn’t look like a YouTube link.";return}
+ const tok=catTok()||$("pubTok").value.trim();if(!tok){$("pubMsg").textContent="Sign in as a moderator, or enter the admin key.";return}
+ $("pubGo").disabled=true;$("pubMsg").textContent="Publishing…";
+ try{const j=await catApi("/api/recordings/publish"+(PUB.pick.analyzed?"?as=candidate":""),{method:"POST",token:tok,body:{recording:PUB.pick,data:pubData()}});
+  $("pubMsg").textContent=j.status==="candidate"?"Saved as a candidate (the official chart was not changed).":"Published. It now appears in search for everyone.";$("pubTok").value=""}
+ catch(e){$("pubGo").disabled=false;$("pubMsg").textContent=e.status===401||e.status===403?"That key or account isn’t allowed to publish.":"Couldn’t publish: "+e.message}
+};
