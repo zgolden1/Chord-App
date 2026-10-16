@@ -2105,7 +2105,7 @@ async function catSearch(q){
  try{
   const j=await catApi("/api/search?q="+encodeURIComponent(q.trim()));
   if(my!==CAT.seq)return;
-  CAT.results=j.results||[];catRows();catMsg(CAT.results.length?"":"Nothing found. Try the artist and song name.");
+  CAT.results=j.results||[];catRows();catMsg(CAT.results.length?"":(j.note||"Nothing found. Try the artist and song name."));
  }catch(e){if(my===CAT.seq){CAT.results=[];catRows();catMsg("Couldn’t reach the song catalog. Check your connection, or use your own file below.")}}
 }
 $("q").oninput=e=>{clearTimeout(CAT.timer);CAT.timer=setTimeout(()=>catSearch(e.target.value),350)};
@@ -2169,9 +2169,9 @@ const PUB={pick:null,seq:0,timer:0};
 setInterval(()=>{const on=!!(CAT.api&&S&&S.pcm);if($("pubBox").hidden===on){$("pubBox").hidden=!on;if(on){PUB.pick=null;$("pubMsg").textContent="";$("pubRes").innerHTML="";$("pubQ").value=$("lyTitle").value?($("lyArtist").value+" "+$("lyTitle").value).trim():"";$("pubGo").disabled=true}}$("pubTok").hidden=!!catTok()},800);
 $("pubQ").oninput=e=>{clearTimeout(PUB.timer);PUB.timer=setTimeout(async()=>{
  const q=e.target.value.trim(),my=++PUB.seq;if(q.length<2){$("pubRes").innerHTML="";return}
- try{const j=await catApi("/api/search?q="+encodeURIComponent(q));if(my!==PUB.seq)return;PUB.list=j.results||[];
+ try{const j=await catApi("/api/search?q="+encodeURIComponent(q));if(my!==PUB.seq)return;PUB.list=j.results||[];$("pubMsg").textContent=PUB.list.length?"":(j.note||"No matches. Try just the song title.");
   $("pubRes").innerHTML=PUB.list.map((r,i)=>`<button class="res" data-i="${i}"><span class="rt"><b>${cesc(r.title)}</b><small>${cesc([r.artist,r.year,r.length_s?fmt(r.length_s):null,r.kind&&r.kind!=="studio"?r.kind:null].filter(Boolean).join(" · "))}</small></span>${r.analyzed?'<span class="chip ok">Has a chart</span>':""}</button>`).join("")}
- catch(err){$("pubRes").innerHTML=""}},350)};
+ catch(err){$("pubRes").innerHTML="";$("pubMsg").textContent="Couldn’t reach the catalog: "+(err.message||err)}},350)};
 $("pubRes").onclick=e=>{const b=e.target.closest(".res");if(!b)return;PUB.pick=PUB.list[+b.dataset.i];[...$("pubRes").children].forEach(c=>c.classList.toggle("sel",c===b));
  const d=Math.abs((PUB.pick.length_s||S.dur)-S.dur);$("pubMsg").textContent=PUB.pick.analyzed?"This recording already has a chart, so yours will be saved as a candidate for comparison.":(d>8?`Careful: your file is ${fmt(S.dur)} but this recording is ${fmt(PUB.pick.length_s)}. A different version won’t line up.`:"");$("pubGo").disabled=false};
 function pubData(){

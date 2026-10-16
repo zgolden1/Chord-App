@@ -43,7 +43,7 @@ def musicbrainz(q, limit=10):
         _last[0] = time.time()
     ua = "ChordFlow/0.1 ( %s )" % os.environ.get("MB_CONTACT", "set-MB_CONTACT-in-env")
     r = requests.get("https://musicbrainz.org/ws/2/recording", params={"query": q, "fmt": "json", "limit": limit},
-                     headers={"User-Agent": ua}, timeout=15)
+                     headers={"User-Agent": ua}, timeout=8)
     r.raise_for_status()
     return parse(r.json())
 

@@ -89,9 +89,12 @@ async def api_search(request):
     q = request.query_params.get("q", "").strip()
     if len(q) < 2:
         return JSONResponse({"results": []})
+    note = None
     try:
         res = SEARCH_FN[0](q)
     except Exception as e:
+        note = "Song lookup (MusicBrainz) failed: %s: %s" % (type(e).__name__, str(e)[:160])
+        print("search error:", note, flush=True)
         res = []
         local = get_db().all("SELECT * FROM recordings WHERE title LIKE ? OR artist LIKE ? LIMIT 10", ("%" + q + "%", "%" + q + "%"))
         for r in local:
@@ -104,7 +107,7 @@ async def api_search(request):
         r["analyzed"] = r["mbid"] in have
         r["version"] = have[r["mbid"]]["version"] if r["mbid"] in have else None
     res.sort(key=lambda r: (not r["analyzed"],))
-    return JSONResponse({"results": res})
+    return JSONResponse({"results": res, "note": note} if note else {"results": res})
 
 
 async def api_recording(request):
