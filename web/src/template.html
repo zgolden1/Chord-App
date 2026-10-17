@@ -135,7 +135,7 @@ footer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:
 .cd.pin{outline:2px solid var(--amber);border-radius:4px}.cd{cursor:pointer}
 @media print{#corrBar,#ced{display:none!important}}
 /* ===== calm skin: white, generous space, one accent ===== */
-:root{--bg:#fff;--ink:#1f2933;--mute:#6b7785;--rule:#e7eaef;--card:#f6f7f9;--amber:#e8a317;--on:#1f2933;--key:#fff;--blk:#2b3138}
+:root{--bg:#fff;--ink:#1f2933;--mute:#637080;--rule:#e7eaef;--card:#f6f7f9;--amber:#e8a317;--on:#1f2933;--key:#fff;--blk:#2b3138}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--ink:#eceff3;--mute:#9aa4b1;--rule:#2a2f36;--card:#1d2126;--amber:#f0b429;--on:#15171a;--key:#e9eaec;--blk:#0d0e10;--rh:#6aa6f0}}
 :root[data-theme="dark"]{--bg:#15171a;--ink:#eceff3;--mute:#9aa4b1;--rule:#2a2f36;--card:#1d2126;--amber:#f0b429;--on:#15171a;--key:#e9eaec;--blk:#0d0e10;--rh:#6aa6f0}
 body{font:16px/1.6 var(--sans);padding-bottom:132px}
@@ -271,6 +271,17 @@ body.stage #live{display:none}
 @media (max-width:560px){.erow{flex-wrap:wrap}.erow input{flex:1 1 100%;order:2}}
 #kHears{font-size:14px;margin:0 0 12px;padding:10px 12px;background:var(--bg);border:1px dashed var(--amber);border-radius:10px}
 @media print{#lyEdRow,#lyEditor{display:none!important}}
+
+/* Audit fixes (2026-10-17): 44px tap targets, focus rings on every control, reduced motion */
+button,select,summary,#acct button,header #bStage{min-height:44px}
+input:not([type=range]):not([type=checkbox]):not([type=file]),#vidUrl,#pubIn input{min-height:44px}
+input[type=range]{min-height:44px;touch-action:pan-y}
+#tdn,#tup{min-width:44px}
+#tr button,#tr2 button,.chips button,.chip,.ghostfile,#ytUrl{min-height:44px}
+details.dopt summary,details summary{display:inline-flex;align-items:center}
+.blk .ed{min-width:44px;min-height:44px;top:0;right:0}
+summary:focus-visible,.blk:focus-visible,.cd:focus-visible,a:focus-visible,[role=button]:focus-visible,.res:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
@@ -281,7 +292,7 @@ body.stage #live{display:none}
 <div id="vidPick" hidden><b id="vidTitle"></b><p id="vidMsg"></p><div id="vidList"></div><div class="row" style="gap:8px;flex-wrap:wrap"><input id="vidUrl" type="text" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link"><button id="vidGo">Use this video</button></div></div></div><div class="lvbar"><button id="lvGo" class="primary big">Listen to a song</button><span class="hint">Uses the microphone. Nothing is uploaded.</span></div>
 <details class="dopt" id="more"><summary>Use your own audio file</summary><label class="file"><input type="file" id="fp" hidden><span>Choose a song file (MP3, WAV, M4A)</span></label></details>
 <div id="st">Analysis runs on your device. Nothing is uploaded. A 3-minute song takes about 10 seconds.</div><div id="pg"><i></i></div>
-<details class="dopt" id="ytBox"><summary>Or play along with a YouTube link</summary><div class="row" style="flex-wrap:wrap;gap:8px"><input id="ytUrl" type="text" inputmode="url" placeholder="YouTube link" aria-label="YouTube link" style="flex:1 1 240px;min-height:38px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)"><label class="ghostfile">Chart file<input type="file" id="ytChart" accept=".json,application/json"></label><button id="ytGo" class="primary">Start</button></div><div id="ytMsg" role="status"></div><p class="hint">The video plays in YouTube’s own player. ChordFlow never copies the audio. The chart file comes from the catalog, or from analyze.py run on your own copy of the song.</p></details></section>
+<details class="dopt" id="ytBox"><summary>Or play along with a YouTube link</summary><div class="row" style="flex-wrap:wrap;gap:8px"><input id="ytUrl" type="text" inputmode="url" placeholder="YouTube link" aria-label="YouTube link" style="flex:1 1 240px;min-height:44px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)"><label class="ghostfile">Chart file<input type="file" id="ytChart" accept=".json,application/json"></label><button id="ytGo" class="primary">Start</button></div><div id="ytMsg" role="status"></div><p class="hint">The video plays in YouTube’s own player. ChordFlow never copies the audio. The chart file comes from the catalog, or from analyze.py run on your own copy of the song.</p></details></section>
 <section id="live" hidden><div class="lvtop"><span id="lvKey"></span><span id="lvTime"></span></div><div id="lvNow" aria-live="polite">–</div><div id="lvHist"></div><div id="lvLoop"></div>
 <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button id="lvStop" class="primary" hidden>Stop</button><select id="lvKeySel" aria-label="Key"></select><select id="lvTri" aria-label="Chord detail"><option value="t">Triads</option><option value="s">With 7ths</option></select></div>
 <div id="lvAfter" class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap" hidden><button id="lvChart" class="primary">Make a full chart</button><button id="lvDrop" class="ghost">Discard</button></div><div id="lvMsg" role="status"></div></section>
