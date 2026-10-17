@@ -7,9 +7,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>:root{--sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--rh:#2f6fd0;--ok:#2e8b57;--no:#c0453a}
 
-:root{--bg:#faf8f3;--ink:#2a2a2a;--mute:#7d786e;--rule:#e4e0d6;--amber:#e8a317;--on:#1c1b19;--key:#fff;--blk:#2a2a2a;--card:#f2efe6}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b19;--ink:#f1ede3;--mute:#9a958a;--rule:#3a3833;--amber:#f0b429;--key:#e9e5da;--blk:#0f0e0d;--card:#262522}}
-:root[data-theme="dark"]{--bg:#1c1b19;--ink:#f1ede3;--mute:#9a958a;--rule:#3a3833;--amber:#f0b429;--key:#e9e5da;--blk:#0f0e0d;--card:#262522}
+:root{--bg:#faf8f3;--ink:#2a2a2a;--mute:#7d786e;--rule:#e4e0d6;--amber:#df6f12;--on:#1c1b19;--key:#fff;--blk:#2a2a2a;--card:#f2efe6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1b19;--ink:#f1ede3;--mute:#9a958a;--rule:#3a3833;--amber:#f08a24;--key:#e9e5da;--blk:#0f0e0d;--card:#262522}}
+:root[data-theme="dark"]{--bg:#1c1b19;--ink:#f1ede3;--mute:#9a958a;--rule:#3a3833;--amber:#f08a24;--key:#e9e5da;--blk:#0f0e0d;--card:#262522}
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:16px/1.5 "Source Serif 4",Georgia,serif;padding-bottom:230px}
@@ -135,9 +135,9 @@ footer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:
 .cd.pin{outline:2px solid var(--amber);border-radius:4px}.cd{cursor:pointer}
 @media print{#corrBar,#ced{display:none!important}}
 /* ===== calm skin: white, generous space, one accent ===== */
-:root{--bg:#fff;--ink:#1f2933;--mute:#637080;--rule:#e7eaef;--card:#f6f7f9;--amber:#e8a317;--on:#1f2933;--key:#fff;--blk:#2b3138}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--ink:#eceff3;--mute:#9aa4b1;--rule:#2a2f36;--card:#1d2126;--amber:#f0b429;--on:#15171a;--key:#e9eaec;--blk:#0d0e10;--rh:#6aa6f0}}
-:root[data-theme="dark"]{--bg:#15171a;--ink:#eceff3;--mute:#9aa4b1;--rule:#2a2f36;--card:#1d2126;--amber:#f0b429;--on:#15171a;--key:#e9eaec;--blk:#0d0e10;--rh:#6aa6f0}
+:root{--bg:#fff;--ink:#1f2933;--mute:#637080;--rule:#e7eaef;--card:#f6f7f9;--amber:#df6f12;--on:#1f2933;--key:#fff;--blk:#2b3138}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--ink:#eceff3;--mute:#9aa4b1;--rule:#2a2f36;--card:#1d2126;--amber:#f08a24;--on:#15171a;--key:#e9eaec;--blk:#0d0e10;--rh:#6aa6f0}}
+:root[data-theme="dark"]{--bg:#15171a;--ink:#eceff3;--mute:#9aa4b1;--rule:#2a2f36;--card:#1d2126;--amber:#f08a24;--on:#15171a;--key:#e9eaec;--blk:#0d0e10;--rh:#6aa6f0}
 body{font:16px/1.6 var(--sans);padding-bottom:132px}
 main{max-width:860px;padding:calc(24px + env(safe-area-inset-top,0px)) 20px 32px}
 header{border:0;margin-bottom:32px;align-items:center}
@@ -1069,7 +1069,7 @@ async function load(f){
   S={...r,autoSegs:r.segs,fx:new Array(r.nb).fill(null),items:[],vPin:{},gPin:{},beats0:r.beats.slice(),cOff:0,phase0:r.phase,hold:false,shift:0,nt:"c",ac:"a",ex:0,pcm:x,sr:buf.sampleRate,dur:buf.duration,lyr:null,lyOff:0};$("lyTitle").value=meta.title||gs.title;$("lyArtist").value=meta.artist||gs.artist;$("lyText").value="";lyMsg("");LP={a:null,b:null};
   $("sb").max=buf.duration;$("ttl").textContent=f.name.replace(/\.[^.]+$/,"");
   S.id=songId();sgWatch();$("ctl").hidden=false;$("views").hidden=false;$("sn").value="c";$("sa").value="a";$("sx").value="0";
-  refresh();setTab("c");
+  refresh();setTab("c");$("load").hidden=true;$("vidBar").hidden=false;$("vidChange").hidden=$("vidSave").hidden=true;
   $("st").textContent=S.disp.length+" chords found. Tap a chord to jump to it. A “?” means the app is unsure.";
   $("pg").style.display="none";
  }catch(e){$("st").textContent=e&&e.message==="short"?"That file is too short to analyze.":"Couldn’t read that file. Try an MP3 or WAV.";$("pg").style.display="none"}

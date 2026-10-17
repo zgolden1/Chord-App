@@ -103,7 +103,7 @@ if(!CAT.api){catMsg("The song catalog isn’t connected yet. You can still use y
 catAuthInit();
 
 /* back to search */
-$("vidBack").onclick=()=>{try{au.pause()}catch(e){}ytStop();S=null;$("ctl").hidden=true;$("views").hidden=true;$("vidBar").hidden=true;$("load").hidden=false;$("st").textContent="";window.scrollTo({top:0});$("q").focus()};
+$("vidBack").onclick=()=>{try{au.pause()}catch(e){}try{$("fp").value=""}catch(e){}ytStop();S=null;$("ctl").hidden=true;$("views").hidden=true;$("vidBar").hidden=true;$("load").hidden=false;$("st").textContent="";window.scrollTo({top:0});$("q").focus()};
 
 /* ----- publish a chart analyzed on this device (moderators, or the admin key from Render) ----- */
 const PUB={pick:null,seq:0,timer:0};
