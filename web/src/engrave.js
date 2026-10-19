@@ -143,5 +143,19 @@ function render(S,evs,opts){
  }
  return svgs;
 }
-return{render,keyInfo,fitDur,layoutMeasure};
+/* Which key to SHOW. Presentation only: it never touches chords, timestamps or the detected key.
+   1 published key (when someone supplies a verified one), 2 detected major, 3 relative major of a detected minor, 4 unknown. */
+function validKey(k){return !!k&&Number.isInteger(k.r)&&k.r>=0&&k.r<12}
+function keyDisplay(detected,published){
+ const det=validKey(detected)?{r:detected.r,m:detected.m?1:0}:null;
+ if(validKey(published)){
+  const pub={r:published.r,m:published.m?1:0};
+  const rel=k=>k.m?(k.r+3)%12:k.r;                     // same key signature = same relative-major pitch
+  return{detected_key:det,published_key:pub,display_key:pub,key_source:"published",conflict:!!det&&rel(det)!==rel(pub)};
+ }
+ if(!det)return{detected_key:null,published_key:null,display_key:null,key_source:"unknown",conflict:false};
+ if(!det.m)return{detected_key:det,published_key:null,display_key:det,key_source:"detected_major",conflict:false};
+ return{detected_key:det,published_key:null,display_key:{r:(det.r+3)%12,m:0},key_source:"relative_major_default",conflict:false};
+}
+return{render,keyInfo,keyDisplay,fitDur,layoutMeasure};
 })();

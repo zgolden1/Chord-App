@@ -412,6 +412,9 @@ const $=id=>document.getElementById(id);
 const NS=ChordDSP.NSH,NF=["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
 const QS=["","m","7","maj7","m7","sus2","sus4","dim","aug","m7b5","6","m6"],TRI=[0,1,0,0,1,5,6,7,8,7,0,1],MINQ=new Set([1,4,7,9,11]),QIV=[[0,4,7],[0,3,7],[0,4,7,10],[0,4,7,11],[0,3,7,10],[0,2,7],[0,5,7],[0,3,6],[0,4,8],[0,3,6,10],[0,4,7,9],[0,3,7,9]];
 const ALIAS={0:["","maj"],1:["m","min","-"],2:["7"],3:["maj7","M7","Δ7"],4:["m7","min7","-7"],5:["sus2","2"],6:["sus4","sus"],7:["dim","°"],8:["aug","+"],9:["m7b5","ø"],10:["6"],11:["m6"]};
+function KD(){return ENG.keyDisplay(S.key,S.pubKey)}      // display only; S.key stays the raw detection
+function dkOff(){const d=KD().display_key;return d?(d.r-S.key.r+12)%12:0}   // 3 when a minor detection is shown as its relative major
+function keyLbl(k){const d=KD().display_key;return d?spell((k+dkOff())%12)+(d.m?" minor":" major"):"Key not verified"}
 const NUMS=["1","b2","2","b3","3","4","b5","5","b6","6","b7","7"],ROM=["I","bII","II","bIII","III","IV","bV","V","bVI","VI","bVII","VII"];
 const FM=new Set([5,10,3,8,1]),Fm=new Set([2,7,0,5,10,3]);
 let S=null,FL=false,LP={a:null,b:null},tab="c";
@@ -434,7 +437,7 @@ function aliasOpts(q,sx,ex){
  return out;
 }
 function parts(s){
- const pin=!!s.pinned,q=(S.ex||pin)?s.q:TRI[s.q],r=(s.r+S.shift)%12,d=(s.r-S.key.r+12)%12;
+ const pin=!!s.pinned,q=(S.ex||pin)?s.q:TRI[s.q],r=(s.r+S.shift)%12,d=(s.r-S.key.r-dkOff()+24)%12;
  let sx=QS[q],ex="";
  if(S.ex===2||pin)[sx,ex]=extend(s,q,sx);
  if(s.al&&S.nt==="c"&&(S.ex||pin)){const o=aliasOpts(q,sx,ex)[s.al];if(o){sx=o[0];ex=o[1]}}
@@ -442,7 +445,7 @@ function parts(s){
  if(S.nt==="c")main=spell(r)+sx;
  else if(S.nt==="n")main=NUMS[d]+sx;
  else{let n=ROM[d];if(MINQ.has(q))n=n.toLowerCase();main=n+sx.replace(/^m(?!aj)/,"")}
- if((S.ex>=1||pin)&&s.slash>=0)main+="/"+(S.nt==="c"?spell(s.slash+S.shift):NUMS[(s.slash-S.key.r+12)%12]);
+ if((S.ex>=1||pin)&&s.slash>=0)main+="/"+(S.nt==="c"?spell(s.slash+S.shift):NUMS[(s.slash-S.key.r-dkOff()+24)%12]);
  return{main,ex};
 }
 const altName=s=>{if(!s.alt)return"";const q=S.ex?s.alt.q:s.alt.q;return spell(s.alt.r+S.shift)+(q?"m":"")};
@@ -464,8 +467,8 @@ function build(){
 function refresh(){
  build();
  const k=(S.key.r+S.shift)%12;
- $("mk").textContent="Key of "+spell(k)+(S.key.m?" minor":" major")+", about "+S.bpm+" BPM";
- $("sk").innerHTML=[...Array(12).keys()].map(p=>`<option value="${p}"${p===k?" selected":""}>${spell(p)}${S.key.m?" minor":" major"}</option>`).join("");
+ $("mk").textContent=(KD().display_key?"Key of ":"")+keyLbl(k)+(KD().conflict?" (published key differs from the chords)":"")+", about "+S.bpm+" BPM";
+ $("sk").innerHTML=[...Array(12).keys()].map(p=>`<option value="${p}"${p===k?" selected":""}>${keyLbl(p)}</option>`).join("");
  $("strip").innerHTML=S.disp.map((g,i)=>`<div class="blk${g.unsure?" u":""}${g.pass?" ps":""}${g.seg.pend?" pend":g.seg.pinned?" fx":""}" data-i="${i}"${g.alt?` title="Could also be ${g.alt}"`:""}><b class="${sizeCls(g.main)}">${g.main}</b><em>${g.ex}</em><small>${fmt(g.t0)}${g.alt?" · or "+g.alt:""}</small><button class="ed" data-i="${i}" aria-label="Edit chord ${g.main}">✎</button></div>`).join("");
  buildSheet();S.bassBuilt=false;if(tab==="b")buildBass();buildLyrics();S.uc=ucList();lastK=null;if(tab==="k")buildKeys();if(tab==="g")buildGuitar();renderRev();renderSync();mark(true);
 }
@@ -477,7 +480,7 @@ function measures(){
 function buildSheet(){
  $("sht").textContent=$("ttl").textContent;
  const k=(S.key.r+S.shift)%12;
- $("shm").textContent="Key of "+spell(k)+(S.key.m?" minor":" major")+"  ·  ♩ = "+S.bpm+"  ·  4/4";
+ $("shm").textContent=(KD().display_key?"Key of ":"")+keyLbl(k)+"  ·  ♩ = "+S.bpm+"  ·  4/4";
  $("phv").textContent=(S.phase+1);
  S.meas=measures();let h="",prev=-2;
  S.meas.forEach((m,mi)=>{
@@ -614,7 +617,7 @@ function buildBass(){
  S.bassBuilt=true;
  const k=(S.key.r+S.shift)%12,ks=ENG.keyInfo(k,S.key.m,FL),sh=S.shift>6?S.shift-12:S.shift;
  $("bst").textContent=$("ttl").textContent+" — bass";
- $("bsm").textContent="Key of "+spell(k)+(S.key.m?" minor":" major")+"  ·  ♩ = "+S.bpm+"  ·  4/4";
+ $("bsm").textContent=(KD().display_key?"Key of ":"")+keyLbl(k)+"  ·  ♩ = "+S.bpm+"  ·  4/4";
  const evs=S.bev.map(e=>({g:e.g,d:e.d,m:e.m+sh<28?e.m+sh+12:e.m+sh}));
  const names=S.disp.map(g=>({slot:slotOf(g.t0),text:g.main}));
  $("bassSys").innerHTML=ENG.render(S,evs,{per:innerWidth<600?2:4,ks,names});
