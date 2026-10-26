@@ -291,6 +291,25 @@ details.dopt summary,details summary{display:inline-flex;align-items:center}
 .blk .ed{min-width:44px;min-height:44px;top:0;right:0}
 summary:focus-visible,.blk:focus-visible,.cd:focus-visible,a:focus-visible,[role=button]:focus-visible,.res:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+/* calm view (screen only): no grid lines, fewer and larger chords, current chord clearly lit */
+@media screen{
+#strip{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));border:0;gap:6px 6px}
+.blk{border:0;border-radius:14px;background:transparent;min-height:96px;padding:14px 12px 10px}
+.blk b{font-size:30px;line-height:1.1}.blk b.m{font-size:24px}.blk b.l{font-size:18px}
+.blk small{font-size:12px;opacity:.8}
+.blk.nx{box-shadow:inset 0 0 0 2px var(--amber)}
+.blk.on{background:var(--amber);color:var(--on)}
+.blk.ps{min-height:72px}.blk.ps b{font-size:18px}
+#sheet,#views,body{background:var(--bg)}
+#bars{row-gap:6px}
+.bar{border:0;border-bottom:1px solid var(--rule);height:76px;padding:0 6px}
+.bar:last-child,.bar.eol{border-right:0}
+.bar .c{font-size:26px;padding-left:6px}.bar .c.m{font-size:21px}.bar .c.l{font-size:16px}.bar .c.ps{font-size:15px}
+.bar .no{font-size:11px;opacity:.7}
+.bar.on{box-shadow:none;border-radius:12px;background:var(--amber);border-bottom-color:transparent}
+.bar.on .c,.bar.on .c i,.bar.on .no{color:var(--on)}
+}
+@media screen and (max-width:560px){#strip{grid-template-columns:repeat(2,1fr)}.bar:nth-child(2n){border-right:0}}
 </style>
 </head>
 <body>
@@ -1289,7 +1308,7 @@ function mark(force){
   for(let j=0;j<bl.length;j++){const g=S.disp[j];
    bl[j].classList.toggle("on",j===i);bl[j].classList.toggle("nx",j===i+1);
    bl[j].classList.toggle("lp",LP.a!==null&&LP.b!==null&&g.t1>LP.a&&g.t0<LP.b)}
-  if(!au.paused&&tab==="c"&&bl[i])bl[i].scrollIntoView({block:"nearest",behavior:"smooth"});
+  if(!au.paused&&tab==="c"&&bl[i])bl[i].scrollIntoView({block:"center",behavior:"smooth"});
   ci=i;const g=S.disp[i];
   $("big").textContent=g?g.main:"–";$("bigx").textContent=g?g.ex:"";
   $("nx").textContent=S.disp.slice(i+1,i+4).map(x=>x.main).join("    ");
@@ -1300,7 +1319,7 @@ function mark(force){
  const b=beatAt(t),mi=S.meas.findIndex(m=>b>=m.b&&b<m.b+m.n);
  if(force||mi!==cm){const bs=$("bars").children;for(let j=0;j<bs.length;j++)bs[j].classList.toggle("on",j===mi);
   document.querySelectorAll("#bassSys .mbg").forEach(r=>r.classList.toggle("on",+r.dataset.m===mi));
-  if(!au.paused&&tab==="s"&&bs[mi])bs[mi].scrollIntoView({block:"nearest",behavior:"smooth"});
+  if(!au.paused&&tab==="s"&&bs[mi])bs[mi].scrollIntoView({block:"center",behavior:"smooth"});
   if(!au.paused&&tab==="b"){const r=document.querySelector(`#bassSys .mbg[data-m="${mi}"]`);if(r)r.closest("svg").scrollIntoView({block:"nearest",behavior:"smooth"})}cm=mi}
 }
 
