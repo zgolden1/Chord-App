@@ -301,6 +301,20 @@ summary:focus-visible,.blk:focus-visible,.cd:focus-visible,a:focus-visible,[role
 .bar.on .c,.bar.on .c i,.bar.on .no{color:var(--on)}
 }
 @media screen and (max-width:560px){#strip{grid-template-columns:repeat(2,1fr)}.bar:nth-child(2n){border-right:0}}
+
+/* other ways to play a chord */
+.blk .vo{position:absolute;right:2px;bottom:2px;border:0;background:transparent;color:var(--mute);font-size:20px;line-height:1;letter-spacing:1px;min-width:44px;min-height:44px;padding:0;border-radius:10px}
+.blk.on .vo{color:var(--on)}
+.sy{padding-top:2.3em}
+.sy .ch{cursor:pointer}.sy .ch .vo{position:absolute;left:3px;top:1.05em;text-decoration:none;font-size:1em;line-height:1;letter-spacing:1px;color:var(--mute)}
+#vsh{position:fixed;inset:0;z-index:60}#vsh[hidden]{display:none}
+.vbk{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+.vpn{position:absolute;left:0;right:0;bottom:0;max-height:82vh;overflow:auto;background:var(--bg);color:var(--ink);border-radius:20px 20px 0 0;padding:16px 16px 28px;box-shadow:0 -8px 30px rgba(0,0,0,.2)}
+.vhd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.vhd h3{margin:0;font:700 28px/1.1 var(--sans)}
+.vgr{display:grid;gap:10px;margin:6px 0 14px}.vgr .vp{width:100%;height:auto}
+.vg{grid-template-columns:repeat(3,1fr)}.vg .cd{width:auto}
+@media (min-width:700px){.vpn{left:50%;right:auto;width:560px;transform:translateX(-50%)}}
+@media print{#vsh{display:none!important}.sy .ch .vo,.blk .vo{display:none}}
 </style>
 </head>
 <body>
@@ -329,6 +343,7 @@ summary:focus-visible,.blk:focus-visible,.cd:focus-visible,a:focus-visible,[role
 <select id="sa" aria-label="Sharps or flats"><option value="a">Sharps/flats: auto</option><option value="s">Always sharps (C#)</option><option value="f">Always flats (Db)</option></select>
 <select id="sx" aria-label="Chord detail"><option value="0">Triads only</option><option value="1">7ths and slash chords</option></select></div></details>
 </section>
+<div id="vsh" hidden><div class="vbk" id="vbk"></div><div class="vpn" role="dialog" aria-modal="true" aria-labelledby="voT"><div class="vhd"><h3 id="voT"></h3><button id="voX" aria-label="Close">Close</button></div><div id="voB"></div></div></div>
 <section id="views" hidden>
 <div class="tabs" role="tablist"><button role="tab" id="tabC" aria-selected="true">Chart</button><button role="tab" id="tabL" aria-selected="false">Lyrics</button><button role="tab" id="tabS" aria-selected="false">Sheet</button><button role="tab" id="tabB" aria-selected="false">Bass</button><button role="tab" id="tabK" aria-selected="false">Keys</button><button role="tab" id="tabG" aria-selected="false">Guitar</button><button role="tab" id="tabR" aria-selected="false">Suggestions<span id="rbadge" hidden></span></button></div>
 <div id="sgBar"></div>
@@ -488,7 +503,7 @@ function refresh(){
  const k=(S.key.r+S.shift)%12;
  $("mk").textContent=(KD().display_key?"Key of ":"")+keyLbl(k)+(KD().conflict?" (published key differs from the chords)":"")+", about "+S.bpm+" BPM";
  $("sk").innerHTML=[...Array(12).keys()].map(p=>`<option value="${p}"${p===k?" selected":""}>${keyLbl(p)}</option>`).join("");
- $("strip").innerHTML=S.disp.map((g,i)=>`<div class="blk${g.unsure?" u":""}${g.pass?" ps":""}${g.seg.pend?" pend":g.seg.pinned?" fx":""}" data-i="${i}"${g.alt?` title="Could also be ${g.alt}"`:""}><b class="${sizeCls(g.main)}">${g.main}</b><em>${g.ex}</em><small>${fmt(g.t0)}${g.alt?" · or "+g.alt:""}</small><button class="ed" data-i="${i}" aria-label="Edit chord ${g.main}">✎</button></div>`).join("");
+ $("strip").innerHTML=S.disp.map((g,i)=>`<div class="blk${g.unsure?" u":""}${g.pass?" ps":""}${g.seg.pend?" pend":g.seg.pinned?" fx":""}" data-i="${i}"${g.alt?` title="Could also be ${g.alt}"`:""}><b class="${sizeCls(g.main)}">${g.main}</b><em>${g.ex}</em><small>${fmt(g.t0)}${g.alt?" · or "+g.alt:""}</small><button class="ed" data-i="${i}" aria-label="Edit chord ${g.main}">✎</button><button class="vo" data-k="${g.main}|${g.ex}" aria-label="Other ways to play ${g.main}">⋯</button></div>`).join("");
  buildSheet();S.bassBuilt=false;if(tab==="b")buildBass();buildLyrics();S.uc=ucList();lastK=null;if(tab==="k")buildKeys();if(tab==="g")buildGuitar();renderRev();renderSync();mark(true);
 }
 /* ---------- sheet ---------- */
@@ -539,7 +554,7 @@ function buildLyrics(){
  $("lyOut").innerHTML=rows.map((r,i)=>{
   if(r.kind==="inst")return`<div class="ly inst" data-t="${r.t}" data-i="${i}"><b>Instrumental</b>${r.names.map(n=>`<span>${n}</span>`).join("")}</div>`;
   return`<div class="ly" data-t="${r.t}" data-i="${i}">`+r.syl.map(s=>{const c=s.ch&&s.ch.name;
-   return`<span class="sy${c?" c":""}" data-t="${s.t.toFixed(2)}"${c?` style="--cn:${c.length}"`:""}>${c?`<i class="ch${s.ch.cont?" cont":""}">${c}</i>`:""}${s.txt.replace(/</g,"&lt;")}</span>`+(s.lastOfWord?" ":"")}).join("")+"</div>"}).join("");
+   return`<span class="sy${c?" c":""}" data-t="${s.t.toFixed(2)}"${c?` style="--cn:${c.length}"`:""}>${c?`<i class="ch${s.ch.cont?" cont":""}" data-k="${c}" role="button" tabindex="0" aria-label="Other ways to play ${c}">${c}${s.ch.cont?"":'<s class="vo" aria-hidden="true">⋯</s>'}</i>`:""}${s.txt.replace(/</g,"&lt;")}</span>`+(s.lastOfWord?" ":"")}).join("")+"</div>"}).join("");
  lyI=-2;
 }
 let lyI=-2,lySy=null;
@@ -551,7 +566,7 @@ function markLyr(t){
  if(els[i]&&S.lyRows[i].kind==="line"){const sy=els[i].querySelectorAll(".sy");let n=null;for(const s of sy){if(+s.dataset.t<=t+.03)n=s;else break}
   if(n!==lySy){if(lySy)lySy.classList.remove("now");if(n)n.classList.add("now");lySy=n}}
 }
-$("lyOut").onclick=e=>{const r=e.target.closest(".ly");if(r&&S)au.currentTime=Math.max(0,+r.dataset.t-.1)};
+$("lyOut").onclick=e=>{const ch=e.target.closest(".ch");if(ch&&S){openVo(ch.dataset.k);return}const r=e.target.closest(".ly");if(r&&S)au.currentTime=Math.max(0,+r.dataset.t-.1)};
 function setLyrics(lines,src){S.lyr={lines,src};S.lyOff=0;buildLyrics()}
 function useText(txt){
  const timed=LYR.parseLRC(txt);
@@ -826,7 +841,7 @@ $("cOk").onclick=async()=>{
  $("cOk").disabled=false;
  if(ok){closeEd();toast(SG.ok?"Sent to moderators. It shows dashed until approved.":"Kept for this visit. Sign in to send it.")}
 };
-$("strip").onclick=e=>{if(!S)return;const ed=e.target.closest(".ed");if(ed){openEd(+ed.dataset.i);return}const b=e.target.closest(".blk");if(b)au.currentTime=S.disp[+b.dataset.i].t0};
+$("strip").onclick=e=>{if(!S)return;const vo=e.target.closest(".vo");if(vo){openVo(vo.dataset.k);return}const ed=e.target.closest(".ed");if(ed){openEd(+ed.dataset.i);return}const b=e.target.closest(".blk");if(b)au.currentTime=S.disp[+b.dataset.i].t0};
 /* ----- suggestions tab ----- */
 function desc(it){
  const p=it.payload;
@@ -917,6 +932,22 @@ async function pinClick(kind,key,payload){
  if(cur&&cur.src==="pending"){await sgWithdraw(cur.id);toast("Withdrawn.");return}
  const ok=await sgSubmit(kind,{key,...payload});if(ok)toast(SG.ok?"Pin sent to moderators.":"Kept for this visit. Sign in to send it.");
 }
+function openVo(k){
+ if(!S)return;const u=S.uc.find(x=>x.key===k)||S.uc.find(x=>x.key.startsWith(k+"|"));if(!u)return;
+ $("voT").textContent=u.name;
+ const st=kStyle==="heard"?"triad":kStyle,c=chordOf(u.seg),d=det(u.seg);
+ let h='<div class="lab">Piano</div><div class="vgr">';
+ for(let a=0;a<3;a++)h+=`<svg class="vp" viewBox="0 0 616 120" role="img" aria-label="Piano voicing ${a+1}"></svg>`;
+ h+='</div><div class="lab">Guitar</div><div class="vgr vg">';
+ const sh=bestShapes(u,3);
+ h+=sh.length?sh.map(x=>`<div class="cd">${diagramSvg(x.sh)}</div>`).join(""):'<p class="mute">No easy shape found.</p>';
+ $("voB").innerHTML=h+"</div>";
+ $("voB").querySelectorAll("svg.vp").forEach((el,a)=>{const v=VOI.suggest(c,d,st,null,a);pianoSvg(el,v.lh,v.rh)});
+ $("vsh").hidden=false;$("voX").focus();
+}
+const closeVo=()=>{$("vsh").hidden=true};
+$("voX").onclick=closeVo;$("vbk").onclick=closeVo;
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("vsh").hidden)closeVo();if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("ch")&&S){e.preventDefault();openVo(e.target.dataset.k)}});
 function buildKeys(){
  $("kPick").innerHTML=S.uc.map((u,i)=>`<button class="chip" data-i="${i}">${u.name}</button>`).join("");
  $("kvs").value=kStyle;lastK=null;markKeys(true);
