@@ -13,7 +13,7 @@ function ytShim(on){
   set(v){v=Math.max(0,+v||0);YT.t=v;YT.stamp=performance.now();ytCmd("seekTo",[v,true])}});
  def("paused",{get(){return!ytPlaying()}});
  def("duration",{get(){return YT.dur||(S&&S.dur)||0}});
- def("playbackRate",{get(){return YT.rate},set(v){const r=YT_RATES.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);YT.rate=r;ytCmd("setPlaybackRate",[r]);$("spv").textContent=r.toFixed(2)+"×"}});
+ def("playbackRate",{get(){return YT.rate},set(v){const r=YT_RATES.reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);YT.rate=r;ytCmd("setPlaybackRate",[r]);$("spv").textContent=Math.round(r*100)+"%"}});
  au.play=()=>{YT.stamp=performance.now();ytSet(1);ytCmd("playVideo");return Promise.resolve()};
  au.pause=()=>{YT.t=au.currentTime;YT.stamp=performance.now();ytSet(2);ytCmd("pauseVideo")};
 }
@@ -77,7 +77,7 @@ function chartStart(d,o){
  S.id=songId();sgWatch();
  if(d.notes&&Array.isArray(d.notes.other)&&d.version===1){S.an=d;S.heardC={};anUi()}
  $("ctl").hidden=false;$("views").hidden=false;$("sn").value="c";$("sa").value="a";$("sx").value="0";
- $("sp").step=".25";$("sp").value=1;$("spv").textContent="1.00×";
+ $("sp").step=".25";$("sp").value=1;$("spv").textContent="100%";
  if(o.offset)setCOffRaw(+o.offset);
  if(o.id)ytStart(o.id);
  $("load").hidden=true;$("vidBar").hidden=false;$("vidChange").hidden=$("vidSave").hidden=!o.mbid;

@@ -93,7 +93,7 @@ async def main():
         pg, logs = await newpage(b, {"api": API})
         await pg.set_input_files("#fp", "/tmp/synth.wav"); await pg.wait_for_function("!document.querySelector('#ctl').hidden", timeout=120000)
         check("publish panel appears for a locally analyzed file", await pg.locator("#pubBox").count() == 1 and await pg.wait_for_function("!document.querySelector('#pubBox').hidden", timeout=5000) is not None)
-        await pg.click("#pubBox summary"); await pg.fill("#pubQ", "not charted"); await pg.wait_for_selector("#pubRes .res"); await pg.click("#pubRes .res >> nth=2")
+        await pg.click("#pubOpen"); await pg.fill("#pubQ", "not charted"); await pg.wait_for_selector("#pubRes .res"); await pg.click("#pubRes .res >> nth=2")
         check("publish needs a key when signed out", await pg.is_visible("#pubTok"))
         await pg.fill("#pubTok", "dev:alice"); await pg.fill("#pubYt", "https://youtu.be/CCCCCCCCCCC"); await pg.click("#pubGo"); await pg.wait_for_timeout(800)
         check("a plain user cannot publish", "isn’t allowed" in await pg.inner_text("#pubMsg"), await pg.inner_text("#pubMsg"))
