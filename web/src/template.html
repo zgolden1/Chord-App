@@ -458,6 +458,20 @@ details.dopt[open]{padding-bottom:var(--sp3)}
 #gB .fbtn{background:var(--card2);color:var(--ink)}
 .sy{padding-top:2.1em}
 #vidBar button,.keychip,#pubBox .pill,.lybar .pill,.tabs button,.tabs button:hover{min-height:44px}
+
+/* home tiles: icons in a row */
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--sp2);margin:var(--sp3) 0 0}
+.tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:88px;border-radius:var(--r-lg);border:0;background:var(--glass);color:var(--cream);font:600 13px var(--sans);cursor:pointer;text-align:center;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);--ink:#FFF4D6;--mute:#E8D7AE;--card:rgba(255,244,214,.1);--card2:rgba(255,244,214,.18)}
+.tile:hover{background:rgba(34,21,10,.76);color:var(--cream)}
+.tile svg{display:block}
+.tile#lvGo{background:var(--burnt);color:var(--cream);box-shadow:0 8px 24px rgba(120,45,10,.3)}.tile#lvGo:hover{background:#c8531c}
+.tile:focus-visible{outline:3px solid var(--char);outline-offset:2px;box-shadow:0 0 0 5px var(--cream)}
+#views[hidden]~#fine,#load:not([hidden])~#fine{display:none}
+#fine{margin:var(--sp5) 0 0;color:var(--char);font-size:12px;text-align:center;opacity:.85}
+#qres .grp{color:var(--char);font:600 12px var(--sans);text-transform:uppercase;letter-spacing:.8px;margin:var(--sp2) var(--sp2) 0}
+
+/* the player only appears once a song is open */
+@supports selector(:has(a)){#ft{display:none}body:has(#views:not([hidden])) #ft{display:block}body:not(:has(#views:not([hidden]))){padding-bottom:calc(32px + var(--safe-b))}}
 /* bottom sheets */
 #gsh,#vsh{position:fixed;inset:0;z-index:60}#gsh[hidden],#vsh[hidden]{display:none}
 .vbk{position:absolute;inset:0;background:rgba(34,21,10,.55);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
@@ -495,10 +509,9 @@ body.stage{background:#1d120a}body.stage::before{display:none}body.stage #big,bo
 <header><h1>Chord<span>Flow</span></h1><span id="acct"></span><button id="bStage" class="ghost">Stage view</button></header>
 <section id="load"><div id="srch"><input id="q" type="search" placeholder="Search a song or artist" autocomplete="off" aria-label="Search for a song"><div id="qmsg" role="status"></div><div id="qres"></div>
 <div id="askBox" hidden><b id="askTitle"></b><p id="askTxt"></p><button id="askBtn" class="primary">Ask for this chart</button></div>
-<div id="vidPick" hidden><b id="vidTitle"></b><p id="vidMsg"></p><div id="vidList"></div><div class="row" style="gap:8px;flex-wrap:wrap"><input id="vidUrl" type="text" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link"><button id="vidGo">Use this video</button></div></div></div><div class="lvbar"><button id="lvGo" class="primary big">Listen to a song</button><span class="hint">Uses the microphone. Nothing is uploaded.</span></div>
-<details class="dopt" id="more"><summary>Use your own audio file</summary><label class="file"><input type="file" id="fp" hidden><span>Choose a song file (MP3, WAV, M4A)</span></label></details>
+<div id="vidPick" hidden><b id="vidTitle"></b><p id="vidMsg"></p><div id="vidList"></div><div class="row" style="gap:8px;flex-wrap:wrap"><input id="vidUrl" type="text" inputmode="url" placeholder="Paste a YouTube link" aria-label="YouTube link"><button id="vidGo">Use this video</button></div></div></div><div class="tiles" role="group" aria-label="Start from audio"><button id="lvGo" class="tile" aria-label="Listen to a song with the microphone"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3"/></svg><span>Listen</span></button><label class="tile" id="fileTile" tabindex="0" role="button" aria-label="Choose an audio file to analyze"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4 4 4"/><path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span>Audio file</span><input type="file" id="fp" hidden accept="audio/*,.mp3,.m4a,.wav"></label></div>
 <div id="st" role="status"></div><div id="pg"><i></i></div>
-<details class="dopt" id="ytBox"><summary>Or play along with a YouTube link</summary><div class="row" style="flex-wrap:wrap;gap:8px"><input id="ytUrl" type="text" inputmode="url" placeholder="YouTube link" aria-label="YouTube link" style="flex:1 1 240px;min-height:44px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)"><label class="ghostfile">Chart file<input type="file" id="ytChart" accept=".json,application/json"></label><button id="ytGo" class="primary">Start</button></div><div id="ytMsg" role="status"></div><p class="hint">The video plays in YouTube’s own player. ChordFlow never copies the audio. The chart file comes from the catalog, or from analyze.py run on your own copy of the song.</p></details></section>
+<details class="dopt" id="ytBox" hidden><summary>Or play along with a YouTube link</summary><div class="row" style="flex-wrap:wrap;gap:8px"><input id="ytUrl" type="text" inputmode="url" placeholder="YouTube link" aria-label="YouTube link" style="flex:1 1 240px;min-height:44px;border:1px solid var(--rule);border-radius:10px;padding:0 12px;background:var(--bg);color:var(--ink)"><label class="ghostfile">Chart file<input type="file" id="ytChart" accept=".json,application/json"></label><button id="ytGo" class="primary">Start</button></div><div id="ytMsg" role="status"></div><p class="hint">The video plays in YouTube’s own player. ChordFlow never copies the audio. The chart file comes from the catalog, or from analyze.py run on your own copy of the song.</p></details></section>
 <section id="live" hidden><div class="lvtop"><span id="lvKey"></span><span id="lvTime"></span></div><div id="lvNow" aria-live="polite">–</div><div id="lvHist"></div><div id="lvLoop"></div>
 <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button id="lvStop" class="primary" hidden>Stop</button><select id="lvKeySel" aria-label="Key"></select><select id="lvTri" aria-label="Chord detail"><option value="t">Triads</option><option value="s">With 7ths</option></select></div>
 <div id="lvAfter" class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap" hidden><button id="lvChart" class="primary">Make a full chart</button><button id="lvDrop" class="ghost">Discard</button></div><div id="lvMsg" role="status"></div></section>
@@ -527,9 +540,9 @@ body.stage{background:#1d120a}body.stage::before{display:none}body.stage #big,bo
  <div id="lyEditor" hidden></div>
  <div class="lform" id="lyForm"><input id="lyTitle" placeholder="Song title" aria-label="Song title" autocomplete="off"><input id="lyArtist" placeholder="Artist" aria-label="Artist" autocomplete="off"><button id="lyFind">Look up synced lyrics</button></div>
  <div id="lyMsg" role="status"></div>
- <details id="lyMore"><summary>Paste, upload, or time them yourself</summary>
+ <details id="lyMore"><summary>Paste or time them yourself</summary>
   <textarea id="lyText" rows="7" placeholder="Paste lyrics here, one line per row. Lines that start with a time like [01:23.40] are used as timed. Plain lines can be timed with Tap sync." aria-label="Lyrics text"></textarea>
-  <div class="row"><label class="fbtn">Upload .lrc or .txt<input type="file" id="lyFile" hidden></label><button id="lyUse">Use these lyrics</button><button id="lyTap">Tap sync</button><button id="lyListen">Re-time by listening (experimental)</button></div>
+  <div class="row"><label class="fbtn" hidden>Upload .lrc or .txt<input type="file" id="lyFile" hidden></label><button id="lyUse">Use these lyrics</button><button id="lyTap">Tap sync</button><button id="lyListen">Re-time by listening (experimental)</button></div>
  </details>
  <div class="row" id="lyOff" hidden><span>Lyrics timing</span><button id="lyM5">−0.5s</button><button id="lyM1">−0.1s</button><b id="lyOv">0.0s</b><button id="lyP1">+0.1s</button><button id="lyP5">+0.5s</button></div>
  <div class="card" id="syncBox"><div class="lab">Timing sync</div>
@@ -546,7 +559,7 @@ body.stage{background:#1d120a}body.stage::before{display:none}body.stage #big,bo
  <p id="bassNote">This is a transcription by ear from a full mix, so check it against the record. Rhythms are rounded to 16th notes. Notes held across a bar line are cut at the bar.</p>
 </div>
 <div id="keysWrap" class="panel" hidden>
- <div class="row"><label class="fbtn">Add analysis file<input type="file" id="anFile" hidden accept=".json,application/json"></label><span id="anInfo" class="mute"></span></div>
+ <div class="row" hidden><label class="fbtn">Add analysis file<input type="file" id="anFile" hidden accept=".json,application/json"></label><span id="anInfo" class="mute"></span></div>
  <div id="kPick" class="pick"></div>
  <div class="card" id="kNow">
   <div class="chead"><div id="kName">–</div><button id="kPin" class="pinc" aria-pressed="false" aria-label="Pin this voicing" title="Pin this voicing"></button></div>
@@ -558,7 +571,7 @@ body.stage{background:#1d120a}body.stage::before{display:none}body.stage #big,bo
  <p class="note">Voicings are suggestions built from the chord names and voice-led so the hands move as little as possible. They are not read from the recording. With an analysis file from the offline script (see About) you can switch to “As heard in the recording”. The circle pins a voicing: a pin is sent to moderators and becomes the default once approved.</p>
 </div>
 <div id="gtrWrap" class="panel" hidden>
- <div class="row"><label class="fbtn">Add analysis file<input type="file" id="anFile2" hidden accept=".json,application/json"></label><span id="anInfo2" class="mute"></span></div>
+ <div class="row" hidden><label class="fbtn">Add analysis file<input type="file" id="anFile2" hidden accept=".json,application/json"></label><span id="anInfo2" class="mute"></span></div>
  <h3>Chords in this song</h3>
  <div id="gGrid"></div>
  <div class="card" id="gSel"><div class="chead"><div id="gName">–</div><button id="gEdit" class="ghost">Suggest a fix</button></div><div id="gShapes"></div></div>
@@ -592,10 +605,7 @@ body.stage{background:#1d120a}body.stage::before{display:none}body.stage #big,bo
 </div></div>
 <div id="toast" role="status" hidden></div>
 <section id="stg" hidden><div id="big">–</div><div id="bigx"></div><div id="nx"></div></section>
-<details><summary>About this chart</summary>
-<p style="margin-top:8px">ChordFlow estimates chords from the recording, so treat the chart as a strong draft and check it by ear. It works best on songs with a steady beat and repeating sections. It can miss short chords, passing chords and the intro. A “?” means the app is unsure and the grey note under it shows the other likely chord. “Triads only” hides 7ths and slash chords. Extensions pick up sustained notes, which in a vocal song can include the melody. Tempo is an estimate. Slow-down uses your browser’s pitch-preserving playback. Spotify and Apple Music streams can’t be analyzed, so use files you own.</p></details>
-<details><summary>Offline analysis (optional)</summary>
-<p style="margin-top:8px">For voicings read from the actual notes, run <b>analyze.py</b> on your computer. It separates the stems with Demucs, transcribes notes with Basic Pitch, and writes a small <b>.chordflow-notes.json</b> file. On the Keys tab, tap “Add analysis file” and pick it, using the same audio file you loaded here. Nothing is uploaded.</p></details>
+<p id="fine">Charts are estimated by ear. Check them against the recording.</p>
 </main>
 <footer id="ft">
 <div id="tr"><input type="range" id="sb" min="0" max="1" step="0.01" value="0" aria-label="Position"><span id="tt">0:00</span></div>
@@ -1329,6 +1339,7 @@ async function load(f){
  }catch(e){$("st").textContent=e&&e.message==="short"?"That file is too short to analyze.":"Couldn’t read that file. Try an MP3 or WAV.";$("pg").style.display="none"}
 }
 $("fp").onchange=e=>load(e.target.files[0]);
+$("fileTile").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("fp").click()}};
 document.addEventListener("dragover",e=>e.preventDefault());
 document.addEventListener("drop",e=>{e.preventDefault();load(e.dataTransfer.files[0])});
 /* ---------- controls ---------- */

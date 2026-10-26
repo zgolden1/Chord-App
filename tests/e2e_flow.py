@@ -49,7 +49,7 @@ async def main():
         # 1-4. the flow
         pg, logs = await newpage(b, {"api": API, "devToken": "dev:alice"})
         check("home shows the search box first", await pg.is_visible("#q") and await pg.is_visible("#lvGo"))
-        await pg.fill("#q", "loop"); await pg.wait_for_selector("#qres .res")
+        await pg.fill("#q", "loop"); await pg.wait_for_function("document.querySelectorAll('#qres .res').length===3 && !document.querySelector('#qres .grp')")
         rows = await pg.evaluate("[...document.querySelectorAll('#qres .res')].map(r=>[r.querySelector('b').textContent,r.querySelector('.chip').textContent])")
         print("   results:", rows)
         check("results show chart ready / no chart yet", [r[1] for r in rows] == ["Chart ready", "Chart ready", "No chart yet"], str(rows))

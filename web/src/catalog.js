@@ -39,9 +39,19 @@ function catRows(){
   const chip=r.analyzed?`<span class="chip ok">Chart ready</span>`:`<span class="chip">No chart yet${r.requests?" · "+r.requests+" asked":""}</span>`;
   return `<button class="res" data-i="${i}"><span class="rt"><b>${cesc(r.title)}</b><small>${cesc(meta)}</small></span>${chip}</button>`}).join("");
 }
+async function catBrowse(){
+ const my=++CAT.seq;
+ try{
+  const j=await catApi("/api/charts");
+  if(my!==CAT.seq)return;
+  CAT.results=j.results||[];catRows();
+  if(CAT.results.length)$("qres").insertAdjacentHTML("afterbegin",'<div class="grp">Charts ready</div>');
+  catMsg(CAT.results.length?"":"");
+ }catch(e){if(my===CAT.seq){CAT.results=[];catRows()}}
+}
 async function catSearch(q){
  const my=++CAT.seq;
- if(q.trim().length<2){CAT.results=[];catRows();catMsg("");return}
+ if(q.trim().length<2){CAT.results=[];catRows();catMsg("");catBrowse();return}
  catMsg("Searching…");
  try{
   const j=await catApi("/api/search?q="+encodeURIComponent(q.trim()));
@@ -99,11 +109,12 @@ $("vidSave").onclick=async()=>{
  try{await catApi("/api/recordings/"+encodeURIComponent(S.mbid)+"/suggestions",{method:"POST",body:{kind:"video",payload:{id:YT.id,offset:Math.round((S.cOff||0)*100)/100}}});toast("Sent. A moderator will check it before it changes for everyone.")}
  catch(e){toast(e.status===429?"Daily limit reached.":"Couldn’t send that.")}
 };
+if(CAT.api&&!$("q").value)catBrowse();
 if(!CAT.api){catMsg("The song catalog isn’t connected yet. You can still use your own audio file or listen with the microphone.");$("q").disabled=true}
 catAuthInit();
 
 /* back to search */
-$("vidBack").onclick=()=>{try{au.pause()}catch(e){}try{$("fp").value=""}catch(e){}ytStop();S=null;$("ctl").hidden=true;$("views").hidden=true;$("vidBar").hidden=true;$("load").hidden=false;$("st").textContent="";window.scrollTo({top:0});$("q").focus()};
+$("vidBack").onclick=()=>{try{au.pause()}catch(e){}try{$("fp").value=""}catch(e){}ytStop();S=null;$("ctl").hidden=true;$("views").hidden=true;$("vidBar").hidden=true;$("load").hidden=false;$("st").textContent="";window.scrollTo({top:0});if(!$("q").value)catBrowse();$("q").focus()};
 
 /* ----- publish a chart analyzed on this device (moderators, or the admin key from Render) ----- */
 const PUB={pick:null,seq:0,timer:0};

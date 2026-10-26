@@ -167,6 +167,19 @@ async def api_search(request):
     return JSONResponse({"results": res, "note": note} if note else {"results": res})
 
 
+async def api_charts(request):
+    """Songs that already have a chart, newest first. Shown on the home screen so it is never empty."""
+    try:
+        d = get_db()
+        rows = d.all("SELECT r.mbid, r.title, r.artist, r.album, r.year, r.length_s, r.kind, a.version FROM analyses a JOIN recordings r ON r.mbid = a.mbid "
+                     "WHERE a.status = 'official' ORDER BY a.created_at DESC LIMIT 50")
+    except Exception as e:
+        print("charts error:", type(e).__name__, flush=True)
+        return JSONResponse({"results": [], "note": "The song database isn’t reachable right now."})
+    res = [{**{k: r[k] for k in ("mbid", "title", "artist", "album", "year", "length_s", "kind")}, "analyzed": True, "version": r["version"], "requests": 0} for r in rows]
+    return JSONResponse({"results": res})
+
+
 async def api_recording(request):
     mbid = request.path_params["mbid"]
     rec = get_db().one("SELECT * FROM recordings WHERE mbid=?", (mbid,))
@@ -444,6 +457,7 @@ def make_app():
         Route("/health", health),
         Route("/health/db", health_db),
         Route("/api/search", api_search),
+        Route("/api/charts", api_charts),
         Route("/api/youtube", api_youtube),
         Route("/api/recordings/{mbid}/request", api_request_song, methods=["POST"]),
         Route("/api/moderation/requests", api_top_requests),

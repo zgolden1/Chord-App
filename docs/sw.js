@@ -1,6 +1,6 @@
 /* Offline shell: the app is one self-contained page, so cache it and serve it when there is no signal.
    Bump VERSION when you publish a change so phones pick it up. */
-const VERSION = "chordflow-11";
+const VERSION = "chordflow-12";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => {

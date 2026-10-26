@@ -42,6 +42,8 @@ rec = requests.get(B + "/api/recordings/mb-1").json()
 check("recording served with chords", len(rec["analysis"]["data"]["chords"]) == 3)
 check("search now shows analyzed", requests.get(B + "/api/search", params={"q": "h"}).json()["results"] == [] or True)
 check("search analyzed flag", requests.get(B + "/api/search", params={"q": "honeymoon"}).json()["results"][0]["analyzed"])
+ch = requests.get(B + "/api/charts").json()["results"]
+check("charts list returns songs that have a chart", len(ch) >= 1 and all(x["analyzed"] for x in ch) and any(x["title"].lower().startswith("honeymoon") for x in ch), str(ch)[:200])
 sug = {"kind": "chord", "payload": {"ranges": [{"t0": 8, "t1": 16}], "chord": {"r": 4, "q": 3, "slash": -1}}, "note": "heard maj7"}
 check("suggest requires auth", requests.post(B + "/api/recordings/mb-1/suggestions", json=sug).status_code == 401)
 r = requests.post(B + "/api/recordings/mb-1/suggestions", json=sug, headers=U)
